@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛑 ДИАГНОСТИКА РЕНДЕРИНГА</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        
+        .console {
+            background: #000;
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        
+        .error { color: #ff4444; }
+        .success { color: #44ff44; }
+        .warning { color: #ffff44; }
+        .info { color: #4444ff; }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <h1>🛑 ДИАГНОСТИКА ПРОБЛЕМЫ РЕНДЕРИНГА</h1>
+    
+    <div>
+        <button onclick="checkCabinetProperties()">1. Проверить свойства Cabinet</button>
+        <button onclick="checkAppObject()">2. Проверить объект app</button>
+        <button onclick="checkTransform()">3. Проверить transform</button>
+        <button onclick="checkCanvas()">4. Проверить canvas</button>
+        <button onclick="createTestCabinet()">5. Создать тестовый шкаф</button>
+        <button onclick="compareWithOriginal()">6. Сравнить с оригиналом</button>
+    </div>
+    
+    <div id="console" class="console"></div>
+
+    <!-- Подключаем те же скрипты -->
+    <script src="../js/config.js"></script>
+    <script src="../js/cabinet.js"></script>
+
+    <script>
+        let testCabinet = null;
+        
+        function log(message, type = 'info') {
+            const console = document.getElementById('console');
+            const span = document.createElement('div');
+            span.className = type;
+            span.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            console.appendChild(span);
+            console.scrollTop = console.scrollHeight;
+        }
+
+        function checkCabinetProperties() {
+            log('=== ПРОВЕРКА СВОЙСТВ КЛАССА CABINET ===', 'warning');
+            
+            try {
+                const cabinet = new Cabinet(800, 1800, 500, 100);
+                
+                log(`cabinet.width: ${cabinet.width} (${typeof cabinet.width})`, 'info');
+                log(`cabinet.height: ${cabinet.height} (${typeof cabinet.height})`, 'info');
+                log(`cabinet.depth: ${cabinet.depth} (${typeof cabinet.depth})`, 'info');
+                log(`cabinet.base: ${cabinet.base} (${typeof cabinet.base})`, 'info');
+                
+                log(`cabinet.interiorWidth: ${cabinet.interiorWidth}`, 'info');
+                log(`cabinet.interiorHeight: ${cabinet.interiorHeight}`, 'info');
+                
+                // Проверяем, не затерлись ли основные свойства
+                if (cabinet.width === 800 && cabinet.height === 1800) {
+                    log('✅ Базовые размеры корректны', 'success');
+                } else {
+                    log('❌ Базовые размеры повреждены!', 'error');
+                }
+                
+                // Проверяем методы
+                log(`Методы: getAllParts=${typeof cabinet.getAllParts}, getTotalVolume=${typeof cabinet.getTotalVolume}`, 'info');
+                
+                testCabinet = cabinet;
+                
+            } catch (error) {
+                log(`❌ Ошибка создания шкафа: ${error.message}`, 'error');
+            }
+        }
+
+        function checkAppObject() {
+            log('=== ПРОВЕРКА ОБЪЕКТА APP ===', 'warning');
+            
+            // Эмулируем структуру app
+            const fakeApp = {
+                cabinet: testCabinet,
+                canvas: null,
+                ctx: null,
+                scale: 1
+            };
+            
+            if (fakeApp.cabinet) {
+                log(`app.cabinet.width: ${fakeApp.cabinet.width}`, 'info');
+                log(`app.cabinet.height: ${fakeApp.cabinet.height}`, 'info');
+                log(`app.scale: ${fakeApp.scale}`, 'info');
+                
+                if (fakeApp.cabinet.width > 0 && fakeApp.cabinet.height > 0) {
+                    log('✅ Объект app.cabinet выглядит нормально', 'success');
+                } else {
+                    log('❌ Проблема с объектом app.cabinet!', 'error');
+                }
+            } else {
+                log('❌ app.cabinet отсутствует!', 'error');
+            }
+        }
+
+        function checkTransform() {
+            log('=== ПРОВЕРКА ФУНКЦИИ TRANSFORM ===', 'warning');
+            
+            if (!testCabinet) {
+                log('❌ Сначала создайте тестовый шкаф!', 'error');
+                return;
+            }
+            
+            // Эмулируем calculateTransform
+            const mockCanvasRect = { width: 800, height: 600 };
+            const PADDING = 60;
+            const scale = 1;
+            
+            const availableW = mockCanvasRect.width - 2 * PADDING;
+            const availableH = mockCanvasRect.height - 2 * PADDING;
+            
+            log(`availableW: ${availableW}`, 'info');
+            log(`availableH: ${availableH}`, 'info');
+            log(`cabinet.width: ${testCabinet.width}`, 'info');
+            log(`cabinet.height: ${testCabinet.height}`, 'info');
+            
+            const scaleX = availableW / testCabinet.width;
+            const scaleY = availableH / testCabinet.height;
+            const finalScale = Math.min(scaleX, scaleY) * scale;
+            
+            log(`scaleX: ${scaleX}`, 'info');
+            log(`scaleY: ${scaleY}`, 'info');
+            log(`finalScale: ${finalScale}`, 'info');
+            
+            const cabinetW = testCabinet.width * finalScale;
+            const cabinetH = testCabinet.height * finalScale;
+            
+            log(`cabinetW: ${cabinetW}`, 'info');
+            log(`cabinetH: ${cabinetH}`, 'info');
+            
+            if (finalScale > 0 && cabinetW > 10 && cabinetH > 10) {
+                log('✅ Transform выглядит нормально', 'success');
+            } else {
+                log('❌ Проблема с transform!', 'error');
+                log(`Возможная причина: finalScale=${finalScale}, cabinetW=${cabinetW}, cabinetH=${cabinetH}`, 'error');
+            }
+        }
+
+        function checkCanvas() {
+            log('=== ПРОВЕРКА CANVAS ===', 'warning');
+            
+            // В диагностическом режиме canvas может отсутствовать
+            log('Canvas в диагностическом режиме не проверяется', 'info');
+            log('Проверьте в основном интерфейсе:', 'info');
+            log('1. document.getElementById("canvas") !== null', 'info');
+            log('2. canvas.getBoundingClientRect().width > 0', 'info');
+            log('3. canvas.getBoundingClientRect().height > 0', 'info');
+        }
+
+        function createTestCabinet() {
+            log('=== СОЗДАНИЕ ТЕСТОВОГО ШКАФА ===', 'warning');
+            
+            const sizes = [
+                [800, 1800, 500, 100],
+                [1000, 2000, 600, 120],
+                [600, 1600, 400, 80]
+            ];
+            
+            sizes.forEach((size, index) => {
+                try {
+                    const cabinet = new Cabinet(...size);
+                    log(`Тест ${index + 1}: ${size.join('×')} = ${cabinet.width}×${cabinet.height}×${cabinet.depth}×${cabinet.base}`, 'success');
+                } catch (error) {
+                    log(`Тест ${index + 1}: Ошибка - ${error.message}`, 'error');
+                }
+            });
+        }
+
+        function compareWithOriginal() {
+            log('=== СРАВНЕНИЕ С ОРИГИНАЛЬНОЙ СТРУКТУРОЙ ===', 'warning');
+            
+            if (!testCabinet) {
+                log('❌ Сначала создайте тестовый шкаф!', 'error');
+                return;
+            }
+            
+            const expectedProperties = [
+                'width', 'height', 'depth', 'base', 
+                'dividers', 'rods', 'sections'
+            ];
+            
+            expectedProperties.forEach(prop => {
+                if (testCabinet.hasOwnProperty(prop)) {
+                    log(`✅ ${prop}: ${typeof testCabinet[prop]} = ${JSON.stringify(testCabinet[prop]).substring(0, 50)}...`, 'success');
+                } else {
+                    log(`❌ Отсутствует свойство: ${prop}`, 'error');
+                }
+            });
+            
+            // Проверяем новые методы
+            const newMethods = ['getAllParts', 'getTotalVolume', 'getTotalCost', 'addDivider'];
+            newMethods.forEach(method => {
+                if (typeof testCabinet[method] === 'function') {
+                    log(`✅ Метод ${method}: найден`, 'success');
+                } else {
+                    log(`❌ Метод ${method}: отсутствует`, 'error');
+                }
+            });
+        }
+
+        // Автозапуск диагностики
+        window.onload = function() {
+            log('🛑 ДИАГНОСТИКА ПРОБЛЕМЫ РЕНДЕРИНГА НАЧАТА', 'warning');
+            log('Нажимайте кнопки по порядку для выявления проблемы', 'info');
+            setTimeout(checkCabinetProperties, 500);
+        };
+    </script>
+</body>
+</html>

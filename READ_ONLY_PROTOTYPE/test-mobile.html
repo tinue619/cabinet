@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест мобильных кнопок</title>
+  <style>
+    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+    .mobile-toolbar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.95);
+      padding: 12px 20px;
+      border-radius: 25px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    }
+    .mobile-tool-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 12px;
+      background: transparent;
+      border: none;
+      border-radius: 12px;
+      color: #666;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      min-width: 54px;
+      min-height: 54px;
+    }
+    .mobile-tool-btn:active {
+      background: rgba(0, 122, 255, 0.1);
+    }
+    .mobile-tool-btn.active {
+      background: rgba(0, 122, 255, 0.1);
+      color: #007AFF;
+    }
+    .mobile-tool-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+    }
+    #log {
+      background: #f5f5f5;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 100px;
+      font-family: monospace;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+<body>
+  <h1>Тест мобильных кнопок</h1>
+  <div id="log">Лог событий:\n</div>
+
+  <div class="mobile-toolbar">
+    <button class="mobile-tool-btn" data-tool="shelf" title="Добавить полку">
+      <svg fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12h18"/>
+      </svg>
+      <span>Полка</span>
+    </button>
+    
+    <button class="mobile-tool-btn" data-tool="stand" title="Добавить стойку">
+      <svg fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v18"/>
+      </svg>
+      <span>Стойка</span>
+    </button>
+    
+    <button class="mobile-tool-btn" data-tool="rod" title="Добавить штангу">
+      <svg fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14"/>
+        <circle cx="19" cy="12" r="1" stroke="currentColor" fill="none"/>
+        <circle cx="5" cy="12" r="1" stroke="currentColor" fill="none"/>
+      </svg>
+      <span>Штанга</span>
+    </button>
+    
+    <button class="mobile-tool-btn" data-tool="settings" title="Настройки">
+      <svg fill="none" viewBox="0 0 24 24">
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065Z"/>
+        <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+      </svg>
+      <span>Габариты</span>
+    </button>
+  </div>
+
+  <script>
+    const log = document.getElementById('log');
+    
+    function addLog(message) {
+      log.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+      log.scrollTop = log.scrollHeight;
+    }
+    
+    // Тестируем обработчики событий как в mobileUIManager.js
+    document.body.addEventListener('click', (e) => {
+      const toolBtn = e.target.closest('.mobile-tool-btn');
+      if (toolBtn && toolBtn.dataset.tool) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        addLog('Нажата кнопка: ' + toolBtn.dataset.tool);
+        
+        // Убираем активное состояние со всех кнопок
+        document.querySelectorAll('.mobile-tool-btn').forEach(btn => {
+          btn.classList.remove('active');
+        });
+        
+        // Добавляем активное состояние на нажатую кнопку
+        toolBtn.classList.add('active');
+        
+        return;
+      }
+    });
+    
+    addLog('Тест инициализирован. Нажимайте на кнопки.');
+  </script>
+</body>
+</html>

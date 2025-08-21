@@ -1,0 +1,992 @@
+/* =========================== */
+/* УЛУЧШЕННАЯ МОБИЛЬНАЯ ВЕРСИЯ */
+/* =========================== */
+
+/* Базовые переменные для мобильной версии */
+:root {
+  --mobile-primary: #007AFF;
+  --mobile-primary-light: rgba(0, 122, 255, 0.1);
+  --mobile-danger: #FF3B30;
+  --mobile-success: #34C759;
+  --mobile-warning: #FF9500;
+  --mobile-surface: #FFFFFF;
+  --mobile-surface-secondary: #F2F2F7;
+  --mobile-text-primary: #000000;
+  --mobile-text-secondary: #3C3C43;
+  --mobile-separator: #C6C6C8;
+  --mobile-shadow: rgba(0, 0, 0, 0.1);
+  --mobile-toolbar-height: 60px;
+  --mobile-safe-area-bottom: env(safe-area-inset-bottom, 20px);
+  --mobile-safe-area-top: env(safe-area-inset-top, 20px);
+}
+
+/* =========================== */
+/* МОБИЛЬНЫЙ LAYOUT */
+/* =========================== */
+
+@media (max-width: 768px) {
+  html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Скрываем десктопные элементы */
+  .sidebar {
+    display: none !important;
+  }
+
+  .toolbar {
+    display: none !important;
+  }
+
+  .app-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    flex-direction: column !important;
+    position: relative;
+  }
+
+  .main-content {
+    width: 100vw !important;
+    height: 100vh !important;
+    flex: 1 !important;
+    position: relative;
+  }
+
+  .canvas-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #canvas {
+    width: 100vw !important;
+    height: 100vh !important;
+    touch-action: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    display: block;
+  }
+
+  #canvas3d {
+    width: 100vw !important;
+    height: 100vh !important;
+    touch-action: none;
+  }
+}
+
+/* =========================== */
+/* МОБИЛЬНАЯ ПАНЕЛЬ ИНСТРУМЕНТОВ */
+/* =========================== */
+
+.mobile-toolbar {
+  position: fixed;
+  bottom: var(--mobile-safe-area-bottom);
+  left: 50%;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 12px 16px;
+  border-radius: 25px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  z-index: 1000;
+  max-width: calc(100vw - 40px);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+@media (max-width: 768px) {
+  .mobile-toolbar {
+    display: flex;
+  }
+}
+
+/* Адаптивная панель - сворачиваем на маленьких экранах */
+@media (max-width: 375px) {
+  .mobile-toolbar {
+    padding: 8px 12px;
+    gap: 4px;
+    border-radius: 20px;
+  }
+}
+
+/* Кнопки панели инструментов */
+.mobile-tool-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 6px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--mobile-text-secondary);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-width: 44px;
+  min-height: 44px;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  position: relative;
+}
+
+/* Скрытые кнопки (показываются только при развертывании) */
+.mobile-tool-btn-hidden {
+  display: none;
+}
+
+.mobile-toolbar.expanded .mobile-tool-btn-hidden {
+  display: flex;
+}
+
+/* Кнопка разворота */
+.mobile-expand-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px;
+  background: var(--mobile-surface-secondary);
+  border: 1px solid var(--mobile-separator);
+  border-radius: 12px;
+  color: var(--mobile-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-width: 36px;
+  min-height: 44px;
+}
+
+.mobile-expand-btn:active {
+  background: var(--mobile-primary-light);
+  color: var(--mobile-primary);
+  border-color: var(--mobile-primary);
+  transform: scale(0.95);
+}
+
+.mobile-expand-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Поворот иконки при развертывании */
+.mobile-toolbar.expanded .mobile-expand-btn svg {
+  transform: rotate(180deg);
+}
+
+/* Развернутая панель */
+.mobile-toolbar.expanded {
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: calc(100vw - 20px);
+  padding: 8px 12px;
+}
+
+.mobile-tool-btn:active {
+  transform: scale(0.95);
+  background: var(--mobile-primary-light);
+}
+
+.mobile-tool-btn.active {
+  background: var(--mobile-primary-light);
+  color: var(--mobile-primary);
+}
+
+.mobile-tool-btn.active::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  background: var(--mobile-primary);
+  border-radius: 12px;
+  opacity: 0.1;
+  z-index: -1;
+}
+
+.mobile-tool-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  transition: transform 0.2s ease;
+}
+
+/* Адаптация для маленьких экранов */
+@media (max-width: 375px) {
+  .mobile-tool-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 6px 4px;
+    font-size: 9px;
+  }
+  
+  .mobile-tool-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+/* =========================== */
+/* БОКОВАЯ ПАНЕЛЬ НАСТРОЕК */
+/* =========================== */
+
+.mobile-settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 1999;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  backdrop-filter: blur(4px);
+}
+
+.mobile-settings-open .mobile-settings-overlay {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-settings-panel {
+  position: fixed;
+  top: 0;
+  right: -100%;
+  width: 90vw;
+  max-width: 400px;
+  height: 100vh;
+  background: var(--mobile-surface);
+  z-index: 2000;
+  transition: right 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  flex-direction: column;
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.15);
+  border-radius: 20px 0 0 20px;
+}
+
+.mobile-settings-open .mobile-settings-panel {
+  right: 0;
+}
+
+/* Заголовок панели */
+.mobile-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--mobile-safe-area-top) + 20px) 24px 20px;
+  border-bottom: 1px solid var(--mobile-separator);
+  background: var(--mobile-surface-secondary);
+  border-radius: 20px 0 0 0;
+}
+
+.mobile-settings-header h3 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--mobile-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.mobile-close-btn {
+  background: var(--mobile-surface);
+  border: 1px solid var(--mobile-separator);
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--mobile-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-height: 48px;
+  min-width: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-close-btn:active {
+  background: var(--mobile-danger);
+  color: white;
+  border-color: var(--mobile-danger);
+  transform: scale(0.95);
+}
+
+.mobile-close-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* Содержимое панели */
+.mobile-settings-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Группы контролов */
+.mobile-settings-content .control-group {
+  margin-bottom: 24px;
+}
+
+.mobile-settings-content .control-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--mobile-text-secondary);
+  margin-bottom: 8px;
+  display: block;
+  letter-spacing: -0.01em;
+}
+
+.mobile-settings-content .input-wrapper {
+  position: relative;
+}
+
+.mobile-settings-content .input-field {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid var(--mobile-separator);
+  border-radius: 12px;
+  font-size: 18px; /* Предотвращает zoom на iOS */
+  background: var(--mobile-surface-secondary);
+  color: var(--mobile-text-primary);
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-height: 56px;
+  font-weight: 500;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.mobile-settings-content .input-field:focus {
+  outline: none;
+  border-color: var(--mobile-primary);
+  box-shadow: 0 0 0 4px var(--mobile-primary-light);
+  background: var(--mobile-surface);
+}
+
+.mobile-settings-content .input-unit {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mobile-text-secondary);
+  font-size: 16px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.mobile-settings-content .btn-primary {
+  width: 100%;
+  padding: 18px;
+  font-size: 18px;
+  min-height: 56px;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-top: 16px;
+  background: var(--mobile-primary);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.mobile-settings-content .btn-primary:active {
+  transform: scale(0.98);
+}
+
+.mobile-settings-content .btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.mobile-settings-content .btn-primary:active::before {
+  opacity: 1;
+}
+
+/* =========================== */
+/* БЫСТРЫЕ ДЕЙСТВИЯ */
+/* =========================== */
+
+.mobile-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.mobile-quick-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: var(--mobile-surface-secondary);
+  border: 1px solid var(--mobile-separator);
+  border-radius: 12px;
+  color: var(--mobile-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  min-height: 80px;
+  position: relative;
+}
+
+.mobile-quick-btn:active {
+  transform: scale(0.95);
+  background: var(--mobile-primary-light);
+  color: var(--mobile-primary);
+  border-color: var(--mobile-primary);
+}
+
+.mobile-quick-btn svg {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+/* =========================== */
+/* МОБИЛЬНЫЕ УВЕДОМЛЕНИЯ */
+/* =========================== */
+
+.mobile-notifications {
+  position: fixed;
+  top: var(--mobile-safe-area-top);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2500;
+  pointer-events: none;
+  max-width: 90vw;
+}
+
+.mobile-notification {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  animation: mobileSlideInOut 3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  backdrop-filter: blur(20px);
+  text-align: center;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: -0.01em;
+  max-width: 320px;
+  line-height: 1.3;
+}
+
+@keyframes mobileSlideInOut {
+  0%, 100% { 
+    opacity: 0; 
+    transform: translateY(-30px) scale(0.8); 
+  }
+  10%, 90% { 
+    opacity: 1; 
+    transform: translateY(0) scale(1); 
+  }
+}
+
+/* =========================== */
+/* ЖЕСТЫ И TOUCH ПОДДЕРЖКА */
+/* =========================== */
+
+.touch-indicator {
+  position: fixed;
+  pointer-events: none;
+  border-radius: 50%;
+  background: rgba(0, 122, 255, 0.3);
+  border: 2px solid rgba(0, 122, 255, 0.6);
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  transform: scale(0);
+  transition: transform 0.1s ease-out;
+  z-index: 9999;
+}
+
+.touch-indicator.active {
+  transform: scale(1);
+}
+
+/* Индикатор свайпа для открытия панели */
+.swipe-hint {
+  position: fixed;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 80px;
+  background: linear-gradient(to bottom, 
+    transparent, 
+    rgba(0, 122, 255, 0.3) 25%, 
+    rgba(0, 122, 255, 0.6) 50%, 
+    rgba(0, 122, 255, 0.3) 75%, 
+    transparent
+  );
+  border-radius: 2px;
+  opacity: 0;
+  z-index: 999;
+  transition: opacity 0.3s ease;
+  animation: swipeHintPulse 3s ease-in-out infinite;
+}
+
+@keyframes swipeHintPulse {
+  0%, 100% { 
+    opacity: 0;
+    transform: translateY(-50%) translateX(0);
+  }
+  50% { 
+    opacity: 0.8;
+    transform: translateY(-50%) translateX(-4px);
+  }
+}
+
+.swipe-hint.show {
+  opacity: 1;
+}
+
+/* =========================== */
+/* АДАПТАЦИЯ ДЛЯ РАЗНЫХ ЭКРАНОВ */
+/* =========================== */
+
+/* iPhone SE и другие маленькие экраны */
+@media (max-width: 375px) {
+  .mobile-toolbar {
+    gap: 4px;
+    padding: 8px 12px;
+    max-width: calc(100vw - 20px);
+    bottom: max(8px, var(--mobile-safe-area-bottom));
+  }
+  
+  .mobile-settings-panel {
+    width: 95vw;
+  }
+  
+  .mobile-settings-content {
+    padding: 20px 16px;
+  }
+  
+  .mobile-settings-content .control-group {
+    margin-bottom: 20px;
+  }
+  
+  .mobile-quick-actions {
+    gap: 8px;
+  }
+  
+  .mobile-quick-btn {
+    padding: 12px 8px;
+    min-height: 70px;
+  }
+}
+
+/* Очень маленькие экраны */
+@media (max-width: 320px) {
+  .mobile-toolbar {
+    gap: 2px;
+    padding: 6px 8px;
+    border-radius: 18px;
+  }
+  
+  .mobile-tool-btn {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 4px 2px;
+    font-size: 8px;
+  }
+  
+  .mobile-tool-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+  
+  .mobile-settings-content .input-field {
+    font-size: 16px;
+    padding: 14px 16px;
+    min-height: 48px;
+  }
+  
+  .mobile-settings-content .btn-primary {
+    font-size: 16px;
+    padding: 14px;
+    min-height: 48px;
+  }
+}
+
+/* Альбомная ориентация */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mobile-toolbar {
+    bottom: 8px;
+    padding: 6px 12px;
+  }
+  
+  .mobile-notifications {
+    top: 8px;
+  }
+  
+  .mobile-tool-btn {
+    min-height: 36px;
+    font-size: 9px;
+  }
+  
+  .mobile-settings-header {
+    padding: 16px 24px 16px;
+  }
+}
+
+/* =========================== */
+/* АНИМАЦИИ И ПЕРЕХОДЫ */
+/* =========================== */
+
+/* Плавные переходы для всех элементов */
+.mobile-toolbar,
+.mobile-tool-btn,
+.mobile-settings-panel,
+.mobile-notification {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Reduce motion для accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .swipe-hint {
+    animation: none !important;
+  }
+}
+
+/* =========================== */
+/* ПАНЕЛЬ РЕДАКТИРОВАНИЯ */
+/* =========================== */
+
+.mobile-edit-panel {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--mobile-surface);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  z-index: 1002;
+  width: 90%;
+  max-width: 400px;
+  max-height: 70vh;
+  overflow: hidden;
+  display: none;
+}
+
+.mobile-edit-panel.show {
+  display: block;
+  animation: editPanelSlideIn 0.3s ease-out;
+}
+
+@keyframes editPanelSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -60%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.edit-panel-header {
+  background: var(--mobile-primary);
+  color: white;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.edit-panel-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.edit-panel-close {
+  background: none;
+  border: none;
+  color: white;
+  padding: 4px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.edit-panel-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.edit-panel-close svg {
+  width: 20px;
+  height: 20px;
+}
+
+.edit-panel-content {
+  padding: 20px;
+  background: var(--mobile-surface);
+}
+
+.edit-instruction {
+  margin: 0 0 16px 0;
+  color: var(--mobile-text-secondary);
+  font-size: 14px;
+  text-align: center;
+}
+
+.edit-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.position-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-control {
+  background: var(--mobile-surface-secondary);
+  border: 1px solid var(--mobile-separator);
+  color: var(--mobile-text-primary);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-control:hover {
+  background: var(--mobile-primary);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-control:active {
+  transform: translateY(0);
+  opacity: 0.8;
+}
+
+.btn-danger {
+  background: #FF453A;
+  border: none;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 44px;
+  width: 100%;
+}
+
+.btn-danger:hover {
+  background: #D70015;
+  transform: translateY(-1px);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+  opacity: 0.8;
+}
+
+/* Показываем панель редактирования когда активен режим редактирования */
+body.edit-mode-active .mobile-edit-panel {
+  display: block;
+}
+
+/* =========================== */
+/* РЕЖИМ УДАЛЕНИЯ */
+/* =========================== */
+
+.mobile-tool-btn[data-tool="delete"].active {
+  background: #FF453A;
+  color: white;
+}
+
+.mobile-tool-btn[data-tool="edit"].active {
+  background: var(--mobile-primary);
+  color: white;
+}
+
+/* Визуальное выделение элементов в режиме редактирования/удаления */
+.element-selectable {
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.element-selectable:hover {
+  opacity: 0.7;
+}
+
+.element-selected {
+  outline: 2px solid var(--mobile-primary);
+  outline-offset: 2px;
+}
+
+/* =========================== */
+/* АНИМАЦИЯ ДЛЯ КНОПОК ДЕЙСТВИЙ */
+/* =========================== */
+
+.mobile-tool-btn.action-performed {
+  animation: actionFeedback 0.3s ease-out;
+}
+
+@keyframes actionFeedback {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* =========================== */
+/* ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ */
+/* =========================== */
+
+.delete-confirmation {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--mobile-surface);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  z-index: 1003;
+  padding: 20px;
+  width: 90%;
+  max-width: 300px;
+  text-align: center;
+}
+
+.delete-confirmation h4 {
+  margin: 0 0 12px 0;
+  color: var(--mobile-text-primary);
+  font-size: 16px;
+}
+
+.delete-confirmation p {
+  margin: 0 0 20px 0;
+  color: var(--mobile-text-secondary);
+  font-size: 14px;
+}
+
+.delete-confirmation .button-group {
+  display: flex;
+  gap: 12px;
+}
+
+.delete-confirmation button {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.delete-confirmation .btn-cancel {
+  background: var(--mobile-surface-secondary);
+  color: var(--mobile-text-primary);
+}
+
+.delete-confirmation .btn-confirm {
+  background: #FF453A;
+  color: white;
+}
+
+/* =========================== */
+/* СКРЫТИЕ НА ДЕСКТОПЕ */
+/* =========================== */
+
+@media (min-width: 769px) {
+  .mobile-toolbar,
+  .mobile-settings-panel,
+  .mobile-settings-overlay,
+  .mobile-notifications,
+  .mobile-edit-panel,
+  .delete-confirmation,
+  .touch-indicator,
+  .swipe-hint {
+    display: none !important;
+  }
+}
+
+/* =========================== */
+/* ПОДДЕРЖКА ТЕМНОЙ ТЕМЫ */
+/* =========================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mobile-surface: #1C1C1E;
+    --mobile-surface-secondary: #2C2C2E;
+    --mobile-text-primary: #FFFFFF;
+    --mobile-text-secondary: #EBEBF5;
+    --mobile-separator: #38383A;
+  }
+  
+  .mobile-toolbar {
+    background: rgba(28, 28, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mobile-notification {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--mobile-text-primary);
+    border-color: rgba(0, 0, 0, 0.1);
+  }
+}

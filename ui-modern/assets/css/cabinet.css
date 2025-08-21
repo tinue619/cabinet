@@ -1,0 +1,83 @@
+/* Cabinet Designer specific styles */
+
+/* Canvas styles */
+#cabinet-canvas {
+    background: white;
+    background-image: 
+        linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+}
+
+#cabinet-canvas.mode-3d {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Cabinet rendering colors */
+.cabinet-panel {
+    --panel-fill: #f8f9fa;
+    --panel-stroke: #2c3e50;
+    --panel-selected: #4a9eff;
+    --panel-hover: #e3f2fd;
+}
+
+/* Dimension lines */
+.dimension-line {
+    --dimension-color: #657786;
+    --dimension-text: #2c3e50;
+    --dimension-arrow: #657786;
+}
+
+/* Section highlights */
+.section-highlight {
+    --section-hover: rgba(74, 158, 255, 0.1);
+    --section-selected: rgba(74, 158, 255, 0.2);
+    --section-active: rgba(118, 75, 162, 0.1);
+}
+
+/* Interactive handles */
+.resize-handle {
+    --handle-normal: #4a9eff;
+    --handle-hover: #3a8eef;
+    --handle-active: #2a7edf;
+}
+
+/* Grid overlay */
+.grid-overlay {
+    --grid-color: rgba(0, 0, 0, 0.05);
+    --grid-major: rgba(0, 0, 0, 0.1);
+}
+
+/* 3D Mode specific */
+.mode-3d .cabinet-panel {
+    --panel-fill: #ffffff;
+    --panel-stroke: #34495e;
+    --panel-shadow: rgba(0, 0, 0, 0.2);
+}
+
+/* Loading indicator */
+.loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    color: var(--color-text-secondary);
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border);
+    border-top: 3px solid var(--color-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}

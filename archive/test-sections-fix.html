@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Тест исправленных секций</title>
+    <link rel="stylesheet" href="cabinet-app/styles/main.css">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-brand">
+                <h1>🔧 Тест исправленных секций</h1>
+                <span class="version">Fix Test</span>
+            </div>
+        </header>
+
+        <div class="layout">
+            <main class="canvas-container">
+                <canvas id="cabinet-canvas"></canvas>
+                
+                <div id="loading" class="loading-overlay" style="display: flex;">
+                    <div class="loading-spinner"></div>
+                    <span>Тестируем исправленные секции...</span>
+                </div>
+            </main>
+
+            <aside class="panel panel-right">
+                <div class="panel-header">
+                    <h2>Результат теста</h2>
+                </div>
+                
+                <div class="panel-content">
+                    <section class="stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Объем:</span>
+                            <span id="stat-volume" class="stat-value">0 м³</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Панелей:</span>
+                            <span id="stat-panels" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Секций:</span>
+                            <span id="stat-sections" class="stat-value">0</span>
+                        </div>
+                    </section>
+                    
+                    <section class="section">
+                        <h3>Статус</h3>
+                        <div id="test-status" class="system-info">
+                            <div class="info-item">
+                                <span class="info-label">Тест:</span>
+                                <span id="test-result" class="info-value">Выполняется...</span>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Тест исправленных секций -->
+    <script type="module" src="cabinet-app/src/sections-fix-test.js"></script>
+    
+    <script type="module">
+        const loading = document.getElementById('loading');
+        const testResult = document.getElementById('test-result');
+        
+        // Обработчик успешного исправления секций
+        window.addEventListener('cabinet-sections-working', (event) => {
+            console.log('🎉 SECTIONS FIX SUCCESSFUL!', event.detail);
+            if (loading) loading.style.display = 'none';
+            if (testResult) testResult.textContent = '✅ СЕКЦИИ РАБОТАЮТ!';
+            testResult.style.color = 'green';
+        });
+        
+        // Обработчик провала исправления секций
+        window.addEventListener('cabinet-sections-failed', (event) => {
+            console.error('❌ SECTIONS FIX FAILED!', event.detail);
+            if (loading) {
+                loading.innerHTML = `
+                    <div class="error-message">
+                        <h3>❌ Секции не работают</h3>
+                        <p>${event.detail.message}</p>
+                    </div>
+                `;
+            }
+            if (testResult) testResult.textContent = '❌ Секции не работают';
+            testResult.style.color = 'red';
+        });
+    </script>
+</body>
+</html>

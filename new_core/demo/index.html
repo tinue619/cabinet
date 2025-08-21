@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet Core - Examples</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: #4a9eff;
+            border-bottom: 2px solid #4a9eff;
+            padding-bottom: 10px;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 5px;
+        }
+        
+        button {
+            background: #4a9eff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-family: inherit;
+        }
+        
+        button:hover {
+            background: #3a8eef;
+        }
+        
+        .output {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .log-section {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #4a9eff;
+            background: #1a1a1a;
+        }
+        
+        .success { color: #4ade80; }
+        .error { color: #f87171; }
+        .info { color: #4a9eff; }
+        .warning { color: #fbbf24; }
+    </style>
+</head>
+<body>
+    <h1>🧬 Cabinet Core - Примеры использования</h1>
+    
+    <div class="controls">
+        <h2>Запустить примеры:</h2>
+        <button onclick="runExample(1)">Пример 1: Простой шкаф</button>
+        <button onclick="runExample(2)">Пример 2: Материалы</button>
+        <button onclick="runExample(3)">Пример 3: События</button>
+        <button onclick="runExample(4)">Пример 4: Валидация</button>
+        <button onclick="runExample(5)">Пример 5: Секции</button>
+        <button onclick="runAllExamples()">Запустить все</button>
+        <button onclick="clearOutput()">Очистить</button>
+    </div>
+    
+    <div class="output" id="output">
+        <div class="info">Нажмите на кнопку для запуска примера...</div>
+    </div>
+
+    <script type="module">
+        import {
+            example1_SimpleСabinet,
+            example2_Materials,
+            example3_Events,
+            example4_Validation,
+            example5_Sections
+        } from './examples.js';
+        
+        const output = document.getElementById('output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        
+        // Перехват console.log
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendToOutput(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendToOutput(args.join(' '), 'error');
+        };
+        
+        function appendToOutput(text, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = text;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        window.runExample = function(num) {
+            clearOutput();
+            appendToOutput(`Запуск примера ${num}...`, 'info');
+            
+            try {
+                switch(num) {
+                    case 1:
+                        example1_SimpleСabinet();
+                        break;
+                    case 2:
+                        example2_Materials();
+                        break;
+                    case 3:
+                        example3_Events();
+                        break;
+                    case 4:
+                        example4_Validation();
+                        break;
+                    case 5:
+                        example5_Sections();
+                        break;
+                }
+                appendToOutput('✅ Пример выполнен успешно!', 'success');
+            } catch (error) {
+                appendToOutput(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        };
+        
+        window.runAllExamples = function() {
+            clearOutput();
+            for (let i = 1; i <= 5; i++) {
+                runExample(i);
+                appendToOutput('---', 'info');
+            }
+        };
+        
+        window.clearOutput = function() {
+            output.innerHTML = '';
+        };
+        
+        // Запускаем первый пример при загрузке
+        setTimeout(() => runExample(1), 500);
+    </script>
+</body>
+</html>

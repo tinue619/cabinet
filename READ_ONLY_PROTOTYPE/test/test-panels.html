@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Тест счетчика панелей</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .test-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .test-section {
+      margin-bottom: 30px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+    
+    .test-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    
+    .test-result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f0f9ff;
+      border-radius: 5px;
+    }
+    
+    button {
+      padding: 10px 20px;
+      background: #007AFF;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    button:hover {
+      background: #0051D5;
+    }
+    
+    .parts-list {
+      margin-top: 10px;
+    }
+    
+    .part-item {
+      padding: 8px;
+      border-bottom: 1px solid #eee;
+      font-family: monospace;
+    }
+    
+    .success {
+      color: green;
+      font-weight: 600;
+    }
+    
+    .error {
+      color: red;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>🧪 Тест функции подсчета панелей</h1>
+    
+    <div class="test-section">
+      <div class="test-title">Тест 1: Создание базового шкафа</div>
+      <button onclick="testBasicCabinet()">Создать шкаф 800×1800×500</button>
+      <div id="test1-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <div class="test-title">Тест 2: Подсчет всех панелей</div>
+      <button onclick="testGetAllParts()">Получить список панелей</button>
+      <div id="test2-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <div class="test-title">Тест 3: Подсчет объема и стоимости</div>
+      <button onclick="testVolumeAndCost()">Рассчитать объем и стоимость</button>
+      <div id="test3-result" class="test-result"></div>
+    </div>
+    
+    <div class="test-section">
+      <div class="test-title">Тест 4: Добавление разделителей</div>
+      <button onclick="testAddDividers()">Добавить полку и стойку</button>
+      <div id="test4-result" class="test-result"></div>
+    </div>
+  </div>
+
+  <!-- Подключаем необходимые скрипты -->
+  <script src="../js/config.js"></script>
+  <script src="../js/cabinet.js"></script>
+
+  <script>
+    let testCabinet = null;
+
+    function testBasicCabinet() {
+      try {
+        testCabinet = new Cabinet(800, 1800, 500, 100);
+        document.getElementById('test1-result').innerHTML = `
+          <div class="success">✅ Шкаф создан успешно!</div>
+          <div>Размеры: ${testCabinet.width}×${testCabinet.height}×${testCabinet.depth}мм</div>
+          <div>Цоколь: ${testCabinet.base}мм</div>
+        `;
+      } catch (error) {
+        document.getElementById('test1-result').innerHTML = `
+          <div class="error">❌ Ошибка создания шкафа: ${error.message}</div>
+        `;
+      }
+    }
+
+    function testGetAllParts() {
+      if (!testCabinet) {
+        document.getElementById('test2-result').innerHTML = `
+          <div class="error">❌ Сначала создайте шкаф (Тест 1)</div>
+        `;
+        return;
+      }
+
+      try {
+        const parts = testCabinet.getAllParts();
+        let html = `<div class="success">✅ Получено ${parts.length} панелей:</div>`;
+        html += '<div class="parts-list">';
+        parts.forEach((part, index) => {
+          html += `
+            <div class="part-item">
+              ${index + 1}. ${part.name}: ${Math.round(part.w)}×${Math.round(part.h)}×${Math.round(part.d)}мм (${part.material})
+            </div>
+          `;
+        });
+        html += '</div>';
+        document.getElementById('test2-result').innerHTML = html;
+      } catch (error) {
+        document.getElementById('test2-result').innerHTML = `
+          <div class="error">❌ Ошибка получения панелей: ${error.message}</div>
+        `;
+      }
+    }
+
+    function testVolumeAndCost() {
+      if (!testCabinet) {
+        document.getElementById('test3-result').innerHTML = `
+          <div class="error">❌ Сначала создайте шкаф (Тест 1)</div>
+        `;
+        return;
+      }
+
+      try {
+        const volume = testCabinet.getTotalVolume();
+        const cost = testCabinet.getTotalCost();
+        document.getElementById('test3-result').innerHTML = `
+          <div class="success">✅ Расчеты выполнены:</div>
+          <div>Общий объем: ${volume.toFixed(4)} м³</div>
+          <div>Примерная стоимость: ${cost.toLocaleString('ru-RU')} ₽</div>
+        `;
+      } catch (error) {
+        document.getElementById('test3-result').innerHTML = `
+          <div class="error">❌ Ошибка расчетов: ${error.message}</div>
+        `;
+      }
+    }
+
+    function testAddDividers() {
+      if (!testCabinet) {
+        document.getElementById('test4-result').innerHTML = `
+          <div class="error">❌ Сначала создайте шкаф (Тест 1)</div>
+        `;
+        return;
+      }
+
+      try {
+        // Добавляем горизонтальный разделитель (полку)
+        testCabinet.addDivider('h', 600, 0, testCabinet.interiorWidth);
+        
+        // Добавляем вертикальный разделитель (стойку)
+        testCabinet.addDivider('v', 400, 0, testCabinet.interiorHeight);
+
+        const parts = testCabinet.getAllParts();
+        const volume = testCabinet.getTotalVolume();
+        const cost = testCabinet.getTotalCost();
+
+        document.getElementById('test4-result').innerHTML = `
+          <div class="success">✅ Разделители добавлены!</div>
+          <div>Теперь панелей: ${parts.length}</div>
+          <div>Новый объем: ${volume.toFixed(4)} м³</div>
+          <div>Новая стоимость: ${cost.toLocaleString('ru-RU')} ₽</div>
+        `;
+      } catch (error) {
+        document.getElementById('test4-result').innerHTML = `
+          <div class="error">❌ Ошибка добавления разделителей: ${error.message}</div>
+        `;
+      }
+    }
+
+    // Автозапуск первого теста
+    window.onload = function() {
+      console.log('🧪 Страница тестирования загружена');
+      setTimeout(testBasicCabinet, 500);
+    };
+  </script>
+</body>
+</html>

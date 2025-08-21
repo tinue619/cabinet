@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet Designer v3 - Professional Edition</title>
+    
+    <!-- Core Styles -->
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/cabinet-designer.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-brand">
+            <svg class="logo" width="32" height="32" viewBox="0 0 32 32">
+                <rect x="4" y="4" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"/>
+                <line x1="4" y1="12" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
+                <line x1="16" y1="12" x2="16" y2="28" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <h1>Cabinet Designer <span class="version">v3.0</span></h1>
+        </div>
+        
+        <div class="header-actions">
+            <button class="btn-icon" id="btn-undo" title="Отменить (Ctrl+Z)" disabled>
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M7 5L3 9l4 4M3 9h10a4 4 0 110 8" stroke="currentColor" fill="none" stroke-width="2"/>
+                </svg>
+            </button>
+            <button class="btn-icon" id="btn-redo" title="Повторить (Ctrl+Y)" disabled>
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M13 5l4 4-4 4M17 9H7a4 4 0 100 8" stroke="currentColor" fill="none" stroke-width="2"/>
+                </svg>
+            </button>
+            <div class="separator"></div>
+            <button class="btn-icon" id="btn-export" title="Экспорт">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M10 14V3M10 3L6 7M10 3l4 4M3 14v3h14v-3" stroke="currentColor" fill="none" stroke-width="2"/>
+                </svg>
+            </button>
+            <button class="btn-icon" id="btn-settings" title="Настройки">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <circle cx="10" cy="10" r="2" stroke="currentColor" fill="none" stroke-width="2"/>
+                    <path d="M10 3v2M10 15v2M17 10h-2M5 10H3M15.5 5.5l-1.5 1.5M6 14l-1.5 1.5M15.5 14.5L14 13M6 6L4.5 4.5" stroke="currentColor" stroke-width="2"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="app-layout">
+        <!-- Left Panel -->
+        <aside class="panel panel-left">
+            <div class="panel-header">
+                <h2>Параметры шкафа</h2>
+            </div>
+            
+            <div class="panel-content">
+                <!-- Dimensions Section -->
+                <section class="control-section">
+                    <h3>Габариты</h3>
+                    <div class="form-group">
+                        <label for="cabinet-width">
+                            Ширина (мм)
+                            <span class="hint">400-2000</span>
+                        </label>
+                        <input type="number" id="cabinet-width" value="800" min="400" max="2000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="cabinet-height">
+                            Высота (мм)
+                            <span class="hint">600-3000</span>
+                        </label>
+                        <input type="number" id="cabinet-height" value="2000" min="600" max="3000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="cabinet-depth">
+                            Глубина (мм)
+                            <span class="hint">300-800</span>
+                        </label>
+                        <input type="number" id="cabinet-depth" value="600" min="300" max="800" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="cabinet-base">
+                            Цоколь (мм)
+                            <span class="hint">60-200</span>
+                        </label>
+                        <input type="number" id="cabinet-base" value="100" min="60" max="200" step="5">
+                    </div>
+                    <button class="btn btn-primary btn-block" id="btn-apply-dimensions">
+                        Применить размеры
+                    </button>
+                </section>
+
+                <!-- Elements Section -->
+                <section class="control-section">
+                    <h3>Элементы</h3>
+                    <div class="elements-grid">
+                        <button class="element-btn" data-element="shelf" title="Добавить полку">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <rect x="3" y="11" width="18" height="2" fill="currentColor"/>
+                            </svg>
+                            <span>Полка</span>
+                        </button>
+                        <button class="element-btn" data-element="divider" title="Добавить стойку">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <rect x="11" y="3" width="2" height="18" fill="currentColor"/>
+                            </svg>
+                            <span>Стойка</span>
+                        </button>
+                        <button class="element-btn" data-element="rod" title="Добавить штангу">
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="1" fill="currentColor"/>
+                                <rect x="3" y="11" width="18" height="2" fill="currentColor"/>
+                            </svg>
+                            <span>Штанга</span>
+                        </button>
+                        <button class="element-btn" data-element="drawer" title="Добавить ящик" disabled>
+                            <svg width="24" height="24" viewBox="0 0 24 24">
+                                <rect x="4" y="8" width="16" height="8" fill="none" stroke="currentColor" stroke-width="2"/>
+                                <line x1="4" y1="12" x2="20" y2="12" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            <span>Ящик</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Mode Section -->
+                <section class="control-section">
+                    <h3>Режим работы</h3>
+                    <div class="mode-toggle">
+                        <button class="mode-btn active" data-mode="2d">2D</button>
+                        <button class="mode-btn" data-mode="3d">3D</button>
+                    </div>
+                </section>
+            </div>
+        </aside>
+
+        <!-- Center - Canvas Area -->
+        <main class="canvas-container">
+            <div class="canvas-toolbar">
+                <div class="toolbar-group">
+                    <button class="toolbar-btn" id="btn-zoom-in" title="Приблизить">
+                        <svg width="16" height="16" viewBox="0 0 16 16">
+                            <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <line x1="11" y1="11" x2="14" y2="14" stroke="currentColor" stroke-width="2"/>
+                            <line x1="5" y1="7" x2="9" y2="7" stroke="currentColor" stroke-width="2"/>
+                            <line x1="7" y1="5" x2="7" y2="9" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="btn-zoom-out" title="Отдалить">
+                        <svg width="16" height="16" viewBox="0 0 16 16">
+                            <circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <line x1="11" y1="11" x2="14" y2="14" stroke="currentColor" stroke-width="2"/>
+                            <line x1="5" y1="7" x2="9" y2="7" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                    <button class="toolbar-btn" id="btn-zoom-fit" title="По размеру">
+                        <svg width="16" height="16" viewBox="0 0 16 16">
+                            <rect x="2" y="2" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M5 5l6 6M11 5l-6 6" stroke="currentColor" stroke-width="1"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="toolbar-group">
+                    <span class="zoom-level">100%</span>
+                </div>
+            </div>
+            
+            <canvas id="cabinet-canvas"></canvas>
+            
+            <!-- Floating info panel -->
+            <div class="info-overlay" id="info-overlay" style="display: none;">
+                <div class="info-content"></div>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="panel panel-right">
+            <div class="panel-header">
+                <h2>Спецификация</h2>
+            </div>
+            
+            <div class="panel-content">
+                <!-- Stats Section -->
+                <section class="stats-section">
+                    <div class="stat-item">
+                        <span class="stat-label">Объем:</span>
+                        <span class="stat-value" id="stat-volume">0 м³</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Панелей:</span>
+                        <span class="stat-value" id="stat-panels">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Секций:</span>
+                        <span class="stat-value" id="stat-sections">0</span>
+                    </div>
+                </section>
+
+                <!-- Parts List -->
+                <section class="parts-section">
+                    <h3>Детали</h3>
+                    <div class="parts-list" id="parts-list">
+                        <div class="empty-state">
+                            Создайте шкаф для просмотра деталей
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Materials Summary -->
+                <section class="materials-section">
+                    <h3>Материалы</h3>
+                    <div class="materials-list" id="materials-list">
+                        <div class="material-item">
+                            <span class="material-name">ЛДСП 16мм:</span>
+                            <span class="material-value">0 м²</span>
+                        </div>
+                        <div class="material-item">
+                            <span class="material-name">ХДФ 3мм:</span>
+                            <span class="material-value">0 м²</span>
+                        </div>
+                        <div class="material-item">
+                            <span class="material-name">МДФ 16мм:</span>
+                            <span class="material-value">0 м²</span>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Status Bar -->
+    <footer class="status-bar">
+        <div class="status-left">
+            <span id="status-message">Готов к работе</span>
+        </div>
+        <div class="status-right">
+            <span id="mouse-coords">X: 0, Y: 0</span>
+            <span class="separator">|</span>
+            <span id="selection-info">Нет выбранных элементов</span>
+        </div>
+    </footer>
+
+    <!-- Notification Container -->
+    <div class="notifications" id="notifications"></div>
+
+    <!-- Load Scripts -->
+    <script type="module" src="./js/cabinet-designer-app.js"></script>
+</body>
+</html>

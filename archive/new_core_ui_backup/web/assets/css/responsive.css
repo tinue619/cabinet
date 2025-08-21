@@ -1,0 +1,183 @@
+/* Responsive styles */
+
+/* Tablet (768px - 1024px) */
+@media (max-width: 1024px) {
+    .panel-left {
+        width: 240px;
+    }
+    
+    .panel-right {
+        width: 280px;
+    }
+    
+    .elements-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Mobile Landscape (640px - 768px) */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+    
+    .panel-left,
+    .panel-right {
+        width: 100%;
+        height: auto;
+        border: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+    
+    .panel-left {
+        order: 2;
+    }
+    
+    .canvas-container {
+        order: 1;
+        min-height: 400px;
+    }
+    
+    .panel-right {
+        order: 3;
+    }
+    
+    .header-brand h1 {
+        font-size: 16px;
+    }
+    
+    .header-brand .version {
+        display: none;
+    }
+    
+    .elements-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Mobile Portrait (< 640px) */
+@media (max-width: 640px) {
+    .app-header {
+        padding: 0 var(--spacing-md);
+    }
+    
+    .header-actions {
+        gap: var(--spacing-xs);
+    }
+    
+    .btn-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .separator {
+        display: none;
+    }
+    
+    .canvas-toolbar {
+        top: var(--spacing-sm);
+        left: var(--spacing-sm);
+    }
+    
+    .toolbar-btn {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .status-bar {
+        font-size: 11px;
+        padding: 0 var(--spacing-sm);
+    }
+    
+    .status-right {
+        display: none;
+    }
+    
+    .panel-content {
+        padding: var(--spacing-sm);
+    }
+    
+    .control-section {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .modal {
+        max-width: 95%;
+        max-height: 90vh;
+    }
+}
+
+/* Touch-friendly adjustments */
+@media (hover: none) and (pointer: coarse) {
+    .btn,
+    .element-btn {
+        min-height: 44px;
+    }
+    
+    .btn-icon,
+    .toolbar-btn {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .form-group input[type="number"],
+    .form-group input[type="text"],
+    .form-group select {
+        min-height: 44px;
+        font-size: 16px; /* Prevent zoom on iOS */
+    }
+    
+    .context-menu-item {
+        min-height: 44px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    #cabinet-canvas {
+        image-rendering: crisp-edges;
+    }
+}
+
+/* Print styles */
+@media print {
+    .app-header,
+    .panel-left,
+    .panel-right,
+    .status-bar,
+    .canvas-toolbar,
+    .notifications {
+        display: none;
+    }
+    
+    .app-layout {
+        height: auto;
+    }
+    
+    .canvas-container {
+        background: white;
+    }
+    
+    #cabinet-canvas {
+        background: white;
+        width: 100%;
+        height: auto;
+        max-width: 100%;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet Designer - Modern UI</title>
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/cabinet.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="header-brand">
+            <svg class="logo" width="32" height="32" viewBox="0 0 32 32">
+                <rect x="4" y="4" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"/>
+                <line x1="4" y1="12" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
+                <line x1="16" y1="12" x2="16" y2="28" stroke="currentColor" stroke-width="2"/>
+            </svg>
+            <h1>Cabinet Designer <span class="version">v4.0</span></h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn-icon" id="btn-export" title="Экспорт">
+                <svg width="20" height="20" viewBox="0 0 20 20">
+                    <path d="M10 14V3M10 3L6 7M10 3l4 4M3 14v3h14v-3" stroke="currentColor" fill="none" stroke-width="2"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="app-layout">
+        <aside class="panel panel-left">
+            <div class="panel-header"><h2>Параметры шкафа</h2></div>
+            <div class="panel-content">
+                <section class="control-section">
+                    <h3>Габариты</h3>
+                    <div class="form-group">
+                        <label for="cabinet-width">Ширина (мм) <span class="hint">400-2000</span></label>
+                        <input type="number" id="cabinet-width" value="800" min="400" max="2000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="cabinet-height">Высота (мм) <span class="hint">600-3000</span></label>
+                        <input type="number" id="cabinet-height" value="2000" min="600" max="3000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="cabinet-depth">Глубина (мм) <span class="hint">300-800</span></label>
+                        <input type="number" id="cabinet-depth" value="600" min="300" max="800" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label for="cabinet-base">Цоколь (мм) <span class="hint">60-200</span></label>
+                        <input type="number" id="cabinet-base" value="100" min="60" max="200" step="5">
+                    </div>
+                    <button class="btn btn-primary btn-block" id="btn-generate">🔄 Применить размеры</button>
+                </section>
+            </div>
+        </aside>
+
+        <div class="canvas-container">
+            <canvas id="cabinet-canvas"></canvas>
+            <div class="loading-indicator" id="loading" style="display: none;">
+                <div class="loading-spinner"></div>
+                <span>Применение размеров...</span>
+            </div>
+        </div>
+
+        <aside class="panel panel-right">
+            <div class="panel-header"><h2>Информация</h2></div>
+            <div class="panel-content">
+                <section class="stats-section">
+                    <div class="stat-item">
+                        <span class="stat-label">Панелей</span>
+                        <span class="stat-value" id="stat-panels">-</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Объем</span>
+                        <span class="stat-value" id="stat-volume">- м³</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Стоимость</span>
+                        <span class="stat-value" id="stat-cost">- ₽</span>
+                    </div>
+                </section>
+
+                <section class="parts-section">
+                    <h3>Список панелей</h3>
+                    <div class="parts-list" id="parts-list">
+                        <div class="empty-state">Просмотр списка панелей</div>
+                    </div>
+                </section>
+            </div>
+        </aside>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-left"><span id="status-message">Готов к работе</span></div>
+        <div class="status-right">
+            <span>Cabinet Designer v4.0</span>
+            <span>•</span>
+            <span id="status-core">Ядро: загрузка...</span>
+        </div>
+    </div>
+
+    <div class="notifications" id="notifications"></div>
+
+    <!-- Подключаем ядро из new_core -->
+    <script type="module" src="../new_core/index.js"></script>
+
+    <script type="module">
+        // 🔥 ЕДИНЫЙ ДВИЖОК ВМЕСТО 4 РЕНДЕРЕРОВ
+        import PanelEngine from '../cabinet-app/src/infrastructure/Universal2DPanelEngine.js';
+
+        // Infrastructure Layer
+        class CoreAdapter {
+            constructor() {
+                this.cabinet = null;
+                this.coreModule = null;
+                this.system = null;
+            }
+
+            async initialize() {
+                try {
+                    // Импортируем ядро new_core
+                    this.coreModule = await import('../new_core/index.js');
+                    
+                    // Проверяем доступность основных классов
+                    if (!this.coreModule.Cabinet || !this.coreModule.CABINET_DNA) {
+                        throw new Error('Класс Cabinet или CABINET_DNA не загружены');
+                    }
+                    return true;
+                } catch (error) {
+                    console.error('Ошибка инициализации ядра:', error);
+                    return false;
+                }
+            }
+
+            createCabinet(params) {
+                // Правильно формируем объект dimensions
+                const dimensions = {
+                    width: params.width,
+                    height: params.height,
+                    depth: params.depth,
+                    baseHeight: params.baseHeight || 100
+                };
+                
+                // Создаем шкаф с помощью инкапсулированного ядра
+                this.cabinet = new this.coreModule.Cabinet(dimensions);
+                
+                // Генерируем панели шкафа
+                this.cabinet.generate();
+                
+                // Получаем все панели через адаптер
+                const panels = this.extractPanelsData();
+                const stats = this.calculateStats(panels);
+                
+                // Данные для рендерера
+                const data = {
+                    dimensions: dimensions,
+                    cabinet: this.cabinet // Передаем ссылку на шкаф
+                };
+                
+                return {
+                    stats: stats,
+                    panels: panels,
+                    data: data
+                };
+            }
+            
+            // APPLICATION LAYER: Адаптер для извлечения данных о панелях
+            extractPanelsData() {
+                if (!this.cabinet) return [];
+                
+                // Получаем размеры из инкапсулированного шкафа
+                const dimensions = this.cabinet.dimensions;
+                const dna = this.coreModule.CABINET_DNA;
+                
+                const panels = [];
+                
+                // Обязательные панели согласно DNA
+                Object.entries(dna.REQUIRED_PANELS).forEach(([key, panelDef]) => {
+                    const material = dna.MATERIALS[panelDef.material];
+                    
+                    // Вычисляем размеры панели по формулам из DNA
+                    let w, h, d;
+                    
+                    switch(key) {
+                        case 'LEFT_SIDE':
+                        case 'RIGHT_SIDE':
+                            w = material.thickness;
+                            h = dimensions.height;
+                            d = dimensions.depth;
+                            break;
+                        case 'TOP':
+                            w = dimensions.width;
+                            h = material.thickness;
+                            d = dimensions.depth;
+                            break;
+                        case 'BOTTOM':
+                            w = dimensions.width - 2 * dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
+                            h = material.thickness;
+                            d = dimensions.depth;
+                            break;
+                        case 'FRONT_BASE':
+                        case 'BACK_BASE':
+                            w = dimensions.width - 2 * dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
+                            h = dimensions.baseHeight;  // ИСПРАВЛЕНО: высота цоколя, а не толщина материала
+                            d = material.thickness;     // ИСПРАВЛЕНО: толщина материала, а не глубина шкафа
+                            break;
+                        case 'BACK_WALL':
+                            w = dimensions.width - 2 * dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
+                            h = dimensions.height - dimensions.baseHeight - dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
+                            d = material.thickness;
+                            break;
+                        case 'FACADE':
+                            w = dimensions.width;
+                            h = dimensions.height - dimensions.baseHeight;
+                            d = material.thickness;
+                            break;
+                        default:
+                            w = 100; h = 100; d = material.thickness;
+                    }
+                    
+                    panels.push({
+                        name: panelDef.name,
+                        w: Math.round(w),
+                        h: Math.round(h), 
+                        d: Math.round(d),
+                        material: material.name,
+                        type: panelDef.type
+                    });
+                });
+                
+                return panels;
+            }
+            
+            // APPLICATION LAYER: Подсчет статистики
+            calculateStats(panels) {
+                let totalVolume = 0;
+                let totalCost = 0;
+                
+                // Базовые цены за кубический метр
+                const materialPrices = {
+                    'ЛДСП 16мм': 25000,
+                    'ХДФ 3мм': 15000,
+                    'МДФ 16мм': 35000
+                };
+                
+                panels.forEach(panel => {
+                    // Объем в кубических метрах
+                    const volumeM3 = (panel.w * panel.h * panel.d) / (1000 * 1000 * 1000);
+                    totalVolume += volumeM3;
+                    
+                    // Стоимость
+                    const price = materialPrices[panel.material] || 25000;
+                    totalCost += volumeM3 * price;
+                });
+                
+                return {
+                    totalPanels: panels.length,
+                    totalVolume: totalVolume.toFixed(3),
+                    estimatedCost: Math.round(totalCost).toLocaleString('ru-RU')
+                };
+            }
+        }
+
+        // Application Layer
+        class AppService {
+            constructor(coreAdapter, uiManager) {
+                this.core = coreAdapter;
+                this.ui = uiManager;
+                this.currentCabinet = null;
+            }
+
+            async initialize() {
+                this.ui.showStatus('Инициализация ядра...');
+                const success = await this.core.initialize();
+                if (success) {
+                    this.ui.showStatus('Готов к работе');
+                    this.ui.setCoreStatus('Подключено');
+                    this.ui.showNotification('success', 'Система готова к работе!');
+                } else {
+                    this.ui.showStatus('Ошибка инициализации');
+                    this.ui.setCoreStatus('Ошибка');
+                    this.ui.showNotification('error', 'Не удалось подключиться к ядру');
+                }
+                return success;
+            }
+
+            async generateCabinet(dimensions) {
+                try {
+                    this.ui.showLoading(true);
+                    this.ui.showStatus('Применение размеров...');
+                    const result = this.core.createCabinet(dimensions);
+                    this.currentCabinet = result;
+                    this.ui.updateStats(result.stats);
+                    this.ui.updatePanelsList(result.panels);
+                    this.ui.renderCabinet(result);
+                    this.ui.showLoading(false);
+                    this.ui.showStatus('Размеры применены');
+                    this.ui.showNotification('success', 'Размеры применены!');
+                } catch (error) {
+                    this.ui.showLoading(false);
+                    this.ui.showStatus('Ошибка применения');
+                    this.ui.showNotification('error', `Ошибка: ${error.message}`);
+                }
+            }
+        }
+
+        // UI Layer
+        class UIManager {
+            constructor() {
+                this.elements = this.getElements();
+                this.canvas = this.elements.canvas;
+                
+                this.setupCanvas();
+                
+                console.log('🔥 UIManager теперь использует единый движок!');
+            }
+
+            getElements() {
+                return {
+                    canvas: document.getElementById('cabinet-canvas'),
+                    loading: document.getElementById('loading'),
+                    statusMessage: document.getElementById('status-message'),
+                    statusCore: document.getElementById('status-core'),
+                    statPanels: document.getElementById('stat-panels'),
+                    statVolume: document.getElementById('stat-volume'),
+                    statCost: document.getElementById('stat-cost'),
+                    partsList: document.getElementById('parts-list'),
+                    notifications: document.getElementById('notifications')
+                };
+            }
+
+            setupCanvas() {
+                const resizeCanvas = () => {
+                    const container = this.canvas.parentElement;
+                    this.canvas.width = container.clientWidth;
+                    this.canvas.height = container.clientHeight;
+                };
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+            }
+
+            showLoading(show) {
+                this.elements.loading.style.display = show ? 'flex' : 'none';
+            }
+
+            showStatus(message) {
+                this.elements.statusMessage.textContent = message;
+            }
+
+            setCoreStatus(status) {
+                this.elements.statusCore.textContent = `Ядро: ${status}`;
+            }
+
+            updateStats(stats) {
+                this.elements.statPanels.textContent = stats.totalPanels || 0;
+                this.elements.statVolume.textContent = `${stats.totalVolume || 0} м³`;
+                this.elements.statCost.textContent = `${stats.estimatedCost || 0} ₽`;
+            }
+
+            updatePanelsList(panels) {
+                if (!panels || panels.length === 0) {
+                    this.elements.partsList.innerHTML = '<div class="empty-state">Нет панелей</div>';
+                    return;
+                }
+                
+                const html = panels.map((panel, index) => {
+                    // Панели уже в правильном формате из getAllParts()
+                    const name = panel.name || 'Панель ' + (index + 1);
+                    const width = Math.round(panel.w || 0);
+                    const height = Math.round(panel.h || 0);
+                    const depth = Math.round(panel.d || 0);
+                    const material = panel.material || 'Неизвестно';
+                    
+                    return `
+                        <div class="part-item">
+                            <div>
+                                <div class="part-name">${name}</div>
+                                <div class="part-dimensions">${width}×${height}×${depth}мм</div>
+                                <div class="part-material">${material}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                this.elements.partsList.innerHTML = html;
+            }
+
+            renderCabinet(cabinetData) {
+                // 🔥 Единый движок вместо 4 рендереров!
+                
+                if (!cabinetData || !cabinetData.data?.dimensions) {
+                    console.warn('Нет данных для рендера');
+                    return;
+                }
+                
+                // ✨ МАГИЯ: просто вызываем единый движок!
+                PanelEngine.renderFullCabinet(this.canvas, {
+                    dimensions: cabinetData.data.dimensions
+                });
+                
+                console.log('🎨 Рендер через единый движок:', cabinetData.data.dimensions);
+            }
+
+            showNotification(type, message) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.innerHTML = `<div class="notification-content"><div class="notification-message">${message}</div></div>`;
+                this.elements.notifications.appendChild(notification);
+                setTimeout(() => { if (notification.parentNode) notification.parentNode.removeChild(notification); }, 3000);
+            }
+        }
+
+        // Event Controller
+        class EventController {
+            constructor(appService, uiManager) {
+                this.app = appService;
+                this.ui = uiManager;
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                document.getElementById('btn-generate').addEventListener('click', () => {
+                    this.app.generateCabinet(this.getDimensions());
+                });
+            }
+
+            getDimensions() {
+                return {
+                    width: parseInt(document.getElementById('cabinet-width').value),
+                    height: parseInt(document.getElementById('cabinet-height').value),
+                    depth: parseInt(document.getElementById('cabinet-depth').value),
+                    baseHeight: parseInt(document.getElementById('cabinet-base').value)
+                };
+            }
+        }
+
+        // App Initialization
+        async function initializeApp() {
+            const coreAdapter = new CoreAdapter();
+            const uiManager = new UIManager();
+            const appService = new AppService(coreAdapter, uiManager);
+            const eventController = new EventController(appService, uiManager);
+            
+            // Инициализируем систему
+            await appService.initialize();
+            
+            // Создаем шкаф с дефолтными размерами сразу при загрузке
+            const defaultDimensions = {
+                width: 800,
+                height: 2000,
+                depth: 600,
+                baseHeight: 100
+            };
+            
+            await appService.generateCabinet(defaultDimensions);
+            
+            // При изменении размера окна - перерисовываем тот же шкаф
+            window.addEventListener('resize', () => {
+                if (appService.currentCabinet) {
+                    uiManager.renderCabinet(appService.currentCabinet);
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+</body>
+</html>

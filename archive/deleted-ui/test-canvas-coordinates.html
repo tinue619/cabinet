@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔄 Тест новой координатной системы Canvas</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 2.5em;
+        }
+        
+        .coordinate-info {
+            background: #e8f4fd;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Consolas', monospace;
+        }
+        
+        .coordinate-info h3 {
+            margin: 0 0 15px 0;
+            color: #2980b9;
+        }
+        
+        .old-system {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        
+        .new-system {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        
+        .results-container {
+            background: rgba(255,255,255,0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+        
+        .success { border-color: #28a745; background: #d4edda; color: #155724; }
+        .error { border-color: #dc3545; background: #f8d7da; color: #721c24; }
+        .info { border-color: #17a2b8; background: #d1ecf1; color: #0c5460; }
+        .warning { border-color: #ffc107; background: #fff3cd; color: #856404; }
+        
+        canvas {
+            border: 2px solid #bdc3c7;
+            background: #ffffff;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .canvas-container {
+            text-align: center;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔄 КООРДИНАТНАЯ СИСТЕМА CANVAS</h1>
+        <p>Тестирование перехода на Canvas-стиль позиционирования</p>
+    </div>
+
+    <div class="coordinate-info">
+        <h3>📐 Изменения в координатной системе:</h3>
+        
+        <div class="old-system">
+            <strong>❌ СТАРАЯ система (смешанная):</strong><br>
+            • Y=0 могло быть как вверху, так и внизу<br>
+            • Разные панели использовали разную логику<br>
+            • Путаница в расчетах позиций
+        </div>
+        
+        <div class="new-system">
+            <strong>✅ НОВАЯ система (Canvas-стиль):</strong><br>
+            • Y=0 всегда вверху шкафа<br>
+            • Y=height всегда внизу шкафа<br>
+            • Единообразная логика для всех панелей<br>
+            • Соответствует стандартам Canvas API
+        </div>
+    </div>
+
+    <div class="results-container">
+        <h2>🔬 Результаты тестирования координат:</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="canvas-container">
+        <h2>🎨 Визуализация (координаты Canvas):</h2>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>TOP (крыша)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498db;"></div>
+                <span>BOTTOM (дно)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2ecc71;"></div>
+                <span>FRONT_BASE (цоколь П)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span>BACK_BASE (цоколь З)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9b59b6;"></div>
+                <span>FACADE (фасад)</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 🏗️ UI LAYER - Тест координатной системы Canvas
+        // ТОЛЬКО отображение результатов, БЕЗ логики
+
+        let results = document.getElementById('results');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        async function runCoordinateTest() {
+            try {
+                log('🚀 Начинаем тест координатной системы Canvas...', 'info');
+
+                // Импортируем ядро
+                const { Cabinet } = await import('./new_core/entities/Cabinet.js');
+                const { CABINET_DNA } = await import('./new_core/cabinet-dna.js');
+                
+                log(`✅ Ядро загружено, версия ДНК: ${CABINET_DNA.SIGNATURE.version}`, 'success');
+                log(`🔄 Координатная система: ${CABINET_DNA.SIGNATURE.coordinates || 'не указана'}`, 'info');
+
+                // Создаем тестовый шкаф
+                const cabinet = new Cabinet({
+                    width: 800,
+                    height: 2000,
+                    depth: 600,
+                    baseHeight: 100
+                });
+
+                log(`🏗️ Шкаф создан: ${cabinet.dimensions.width}×${cabinet.dimensions.height}×${cabinet.dimensions.depth}`, 'success');
+
+                // Генерируем панели
+                cabinet.generate();
+                const stats = cabinet.getStats();
+                log(`⚙️ Генерация завершена: ${stats.panelsCount} панелей`, 'success');
+
+                // Анализируем координаты всех панелей
+                const panels = cabinet.getPanels();
+                const dims = cabinet.dimensions;
+                
+                log('📋 Анализ Y-координат (Canvas-стиль, Y=0 вверху):', 'info');
+                
+                // Проверяем ключевые панели
+                const criticalPanels = ['TOP', 'BOTTOM', 'FRONT_BASE', 'BACK_BASE', 'FACADE'];
+                let allCorrect = true;
+                
+                criticalPanels.forEach(panelKey => {
+                    const panel = cabinet.getPanel(panelKey);
+                    if (!panel) {
+                        log(`❌ Панель ${panelKey} не найдена!`, 'error');
+                        allCorrect = false;
+                        return;
+                    }
+                    
+                    const y = panel.position.y;
+                    const height = panel.dimensions.height;
+                    
+                    let expectedY, description, isCorrect = true;
+                    
+                    switch(panelKey) {
+                        case 'TOP':
+                            expectedY = 0;
+                            description = 'крыша должна быть в самом верху';
+                            isCorrect = (y === 0);
+                            break;
+                            
+                        case 'BOTTOM':
+                            expectedY = dims.height - cabinet.dimensions.baseHeight - 16; // y - b - t
+                            description = 'дно должно быть над цоколем';
+                            isCorrect = (y === expectedY);
+                            break;
+                            
+                        case 'FRONT_BASE':
+                        case 'BACK_BASE':
+                            expectedY = dims.height - cabinet.dimensions.baseHeight; // y - b
+                            description = 'цоколи должны быть внизу';
+                            isCorrect = (y === expectedY);
+                            break;
+                            
+                        case 'FACADE':
+                            expectedY = cabinet.dimensions.baseHeight; // b
+                            description = 'фасад должен быть над цоколем';
+                            isCorrect = (y === expectedY);
+                            break;
+                    }
+                    
+                    if (isCorrect) {
+                        log(`✅ ${panelKey}: y=${y} (${description})`, 'success');
+                    } else {
+                        log(`❌ ${panelKey}: y=${y}, ожидалось y=${expectedY} (${description})`, 'error');
+                        allCorrect = false;
+                    }
+                });
+                
+                if (allCorrect) {
+                    log('🎉 ВСЕ КООРДИНАТЫ СООТВЕТСТВУЮТ CANVAS-СТИЛЮ!', 'success');
+                } else {
+                    log('⚠️ Найдены несоответствия в координатах', 'warning');
+                }
+                
+                // Проверяем логическую последовательность Y-координат
+                log('🔍 Проверка логической последовательности (сверху вниз):', 'info');
+                
+                const topPanel = cabinet.getPanel('TOP');
+                const facadePanel = cabinet.getPanel('FACADE');
+                const bottomPanel = cabinet.getPanel('BOTTOM');
+                const frontBasePanel = cabinet.getPanel('FRONT_BASE');
+                
+                if (topPanel && facadePanel && bottomPanel && frontBasePanel) {
+                    const sequence = [
+                        { name: 'TOP', y: topPanel.position.y },
+                        { name: 'FACADE', y: facadePanel.position.y },
+                        { name: 'BOTTOM', y: bottomPanel.position.y },
+                        { name: 'FRONT_BASE', y: frontBasePanel.position.y }
+                    ];
+                    
+                    // Проверяем, что Y увеличивается сверху вниз
+                    let sequenceCorrect = true;
+                    for (let i = 1; i < sequence.length; i++) {
+                        if (sequence[i].y <= sequence[i-1].y) {
+                            sequenceCorrect = false;
+                            break;
+                        }
+                    }
+                    
+                    if (sequenceCorrect) {
+                        log('✅ Последовательность Y-координат корректна (TOP → FACADE → BOTTOM → FRONT_BASE)', 'success');
+                        sequence.forEach(item => {
+                            log(`   ${item.name}: y=${item.y}`, 'info');
+                        });
+                    } else {
+                        log('❌ Нарушена последовательность Y-координат', 'error');
+                    }
+                }
+
+                // Рисуем визуализацию
+                log('🎨 Отрисовываем шкаф в Canvas-координатах...', 'info');
+                drawCabinetCanvas(panels, cabinet.dimensions);
+                
+                log('🏁 Тест координатной системы завершен!', 'success');
+
+            } catch (error) {
+                log(`💥 Ошибка теста: ${error.message}`, 'error');
+                console.error('Coordinate test error:', error);
+            }
+        }
+
+        function drawCabinetCanvas(panels, dimensions) {
+            // Очищаем canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Масштаб для отображения
+            const scale = Math.min(
+                (canvas.width - 100) / dimensions.width,
+                (canvas.height - 100) / dimensions.height
+            );
+            
+            const offsetX = (canvas.width - dimensions.width * scale) / 2;
+            const offsetY = (canvas.height - dimensions.height * scale) / 2;
+
+            // Цвета для панелей
+            const colors = {
+                'TOP': '#e74c3c',           // Красный для крыши
+                'BOTTOM': '#3498db',        // Синий для дна
+                'FRONT_BASE': '#2ecc71',    // Зеленый для переднего цоколя
+                'BACK_BASE': '#f39c12',     // Оранжевый для заднего цоколя
+                'FACADE': '#9b59b6',        // Фиолетовый для фасада
+                'LEFT_SIDE': '#95a5a6',     // Серый для боковин
+                'RIGHT_SIDE': '#95a5a6',
+                'BACK_WALL': '#f1c40f'      // Желтый для задней стенки
+            };
+
+            // Рисуем координатную сетку
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 10; i++) {
+                const x = offsetX + (i * dimensions.width * scale / 10);
+                const y = offsetY + (i * dimensions.height * scale / 10);
+                
+                // Вертикальные линии
+                ctx.beginPath();
+                ctx.moveTo(x, offsetY);
+                ctx.lineTo(x, offsetY + dimensions.height * scale);
+                ctx.stroke();
+                
+                // Горизонтальные линии
+                ctx.beginPath();
+                ctx.moveTo(offsetX, y);
+                ctx.lineTo(offsetX + dimensions.width * scale, y);
+                ctx.stroke();
+            }
+
+            // Подписи координат
+            ctx.fillStyle = '#7f8c8d';
+            ctx.font = '12px Arial';
+            ctx.fillText('Y=0 (верх)', offsetX - 60, offsetY + 5);
+            ctx.fillText(`Y=${dimensions.height} (низ)`, offsetX - 80, offsetY + dimensions.height * scale + 5);
+
+            // Рисуем общий контур шкафа
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(offsetX, offsetY, dimensions.width * scale, dimensions.height * scale);
+
+            // Рисуем панели
+            panels.forEach(panel => {
+                const pos = panel.position;
+                const size = panel.dimensions;
+                
+                // Canvas координаты (Y уже правильные)
+                const x = offsetX + pos.x * scale;
+                const y = offsetY + pos.y * scale;
+                const w = size.width * scale;
+                const h = size.height * scale;
+
+                // Заливка
+                ctx.fillStyle = colors[panel.key] || '#bdc3c7';
+                ctx.fillRect(x, y, w, h);
+
+                // Обводка
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Подпись с координатами
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const text = `${panel.key}\ny=${pos.y}`;
+                const lines = text.split('\n');
+                lines.forEach((line, i) => {
+                    ctx.fillText(line, x + w/2, y + h/2 - 5 + i * 12);
+                });
+            });
+
+            // Стрелка Y-оси
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(offsetX - 30, offsetY);
+            ctx.lineTo(offsetX - 30, offsetY + dimensions.height * scale);
+            ctx.stroke();
+            
+            // Стрелка вниз
+            ctx.beginPath();
+            ctx.moveTo(offsetX - 35, offsetY + dimensions.height * scale - 10);
+            ctx.lineTo(offsetX - 30, offsetY + dimensions.height * scale);
+            ctx.lineTo(offsetX - 25, offsetY + dimensions.height * scale - 10);
+            ctx.stroke();
+            
+            ctx.fillStyle = '#e74c3c';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Y+', offsetX - 30, offsetY + dimensions.height * scale + 20);
+        }
+
+        // Запускаем тест
+        runCoordinateTest();
+
+    </script>
+</body>
+</html>

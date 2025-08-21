@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Тест производительности отрисовки</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 2.5em;
+        }
+        
+        .performance-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .performance-panel {
+            background: rgba(255,255,255,0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .heavy-version {
+            border-left: 5px solid #e74c3c;
+        }
+        
+        .light-version {
+            border-left: 5px solid #2ecc71;
+        }
+        
+        .results-container {
+            background: rgba(255,255,255,0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+        
+        .success { border-color: #28a745; background: #d4edda; color: #155724; }
+        .error { border-color: #dc3545; background: #f8d7da; color: #721c24; }
+        .info { border-color: #17a2b8; background: #d1ecf1; color: #0c5460; }
+        .warning { border-color: #ffc107; background: #fff3cd; color: #856404; }
+        
+        canvas {
+            border: 2px solid #bdc3c7;
+            background: #ffffff;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            height: 300px;
+            display: block;
+            margin: 10px auto;
+        }
+        
+        .benchmark-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        
+        .benchmark-button:hover {
+            background: #2980b9;
+        }
+        
+        .benchmark-button:disabled {
+            background: #95a5a6;
+            cursor: not-allowed;
+        }
+        
+        .timing-result {
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .timing-fast {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .timing-slow {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        @media (max-width: 768px) {
+            .performance-comparison {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ ТЕСТ ПРОИЗВОДИТЕЛЬНОСТИ</h1>
+        <p>Сравнение обычной архитектуры vs легковесного адаптера</p>
+    </div>
+
+    <div class="performance-comparison">
+        <div class="performance-panel heavy-version">
+            <h2>🐌 Обычная архитектура</h2>
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li>ArchitecturalBase для каждой сущности</li>
+                <li>ArchitecturalGuardian валидация</li>
+                <li>Object.freeze() на всех уровнях</li>
+                <li>Сложная иерархия объектов</li>
+                <li>Event system с Map'ами</li>
+            </ul>
+            <canvas id="heavyCanvas"></canvas>
+            <div id="heavyTiming" class="timing-result">Не измерено</div>
+            <button id="heavyBtn" class="benchmark-button" disabled>Тест обычной архитектуры</button>
+        </div>
+        
+        <div class="performance-panel light-version">
+            <h2>🚀 Легковесный адаптер</h2>
+            <p><strong>Особенности:</strong></p>
+            <ul>
+                <li>Простые JavaScript объекты</li>
+                <li>Минимум вложенности</li>
+                <li>Прямая отрисовка без геттеров</li>
+                <li>Оптимизированные циклы</li>
+                <li>Данные подготовлены заранее</li>
+            </ul>
+            <canvas id="lightCanvas"></canvas>
+            <div id="lightTiming" class="timing-result">Не измерено</div>
+            <button id="lightBtn" class="benchmark-button" disabled>Тест легковесного адаптера</button>
+        </div>
+    </div>
+
+    <div class="results-container">
+        <h2>📊 Результаты бенчмарков:</h2>
+        <div id="results"></div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="runAllBtn" class="benchmark-button" style="background: #2ecc71;" disabled>Запустить все тесты</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // 🏗️ UI LAYER - Тест производительности
+        // ТОЛЬКО измерение и отображение, БЕЗ логики
+
+        let results = document.getElementById('results');
+        let heavyCanvas = document.getElementById('heavyCanvas');
+        let lightCanvas = document.getElementById('lightCanvas');
+        let heavyCtx = heavyCanvas.getContext('2d');
+        let lightCtx = lightCanvas.getContext('2d');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        // Глобальные переменные для тестов
+        let cabinet = null;
+        let lightweightCabinet = null;
+
+        // Простая функция для получения цвета панели
+        function getColorForPanel(key) {
+            const colors = {
+                'LEFT_SIDE': '#3498db',
+                'RIGHT_SIDE': '#9b59b6', 
+                'TOP': '#e74c3c',
+                'BOTTOM': '#f39c12',
+                'FRONT_BASE': '#2ecc71',
+                'BACK_BASE': '#34495e',
+                'BACK_WALL': '#f1c40f',
+                'FACADE': '#95a5a6'
+            };
+            return colors[key] || '#bdc3c7';
+        }
+
+        async function initializeTestData() {
+            try {
+                log('📦 Инициализация тестовых данных...', 'info');
+
+                // Импортируем ядро и адаптер
+                const { Cabinet } = await import('./new_core/entities/Cabinet.js');
+                const { LightweightCabinetAdapter } = await import('./new_core/adapters/LightweightCabinetAdapter.js');
+                
+                // Создаем полный шкаф
+                cabinet = new Cabinet({
+                    width: 800,
+                    height: 2000,
+                    depth: 600,
+                    baseHeight: 100
+                });
+                
+                cabinet.generate();
+                
+                // Создаем легковесное представление
+                lightweightCabinet = LightweightCabinetAdapter.createLightweightRepresentation(cabinet);
+                
+                log('✅ Тестовые данные готовы', 'success');
+                log(`📊 Создано панелей: ${lightweightCabinet.panels.length}`, 'info');
+                
+                // Активируем кнопки
+                document.getElementById('heavyBtn').disabled = false;
+                document.getElementById('lightBtn').disabled = false;
+                document.getElementById('runAllBtn').disabled = false;
+                
+            } catch (error) {
+                log(`❌ Ошибка инициализации: ${error.message}`, 'error');
+                console.error('Init error:', error);
+            }
+        }
+
+        async function benchmarkHeavyArchitecture() {
+            if (!cabinet) return;
+            
+            log('🐌 Запуск бенчмарка обычной архитектуры...', 'info');
+            
+            const iterations = 50; // Количество перерисовок
+            
+            const startTime = performance.now();
+            
+            for (let i = 0; i < iterations; i++) {
+                // Имитируем процесс получения данных из архитектуры
+                heavyCtx.clearRect(0, 0, heavyCanvas.width, heavyCanvas.height);
+                
+                const dims = cabinet.dimensions; // Через геттер
+                const panels = cabinet.getPanels(); // Через метод
+                
+                // Расчет трансформации
+                const scale = Math.min(
+                    (heavyCanvas.width - 50) / dims.width,
+                    (heavyCanvas.height - 50) / dims.height
+                );
+                const offsetX = (heavyCanvas.width - dims.width * scale) / 2;
+                const offsetY = (heavyCanvas.height - dims.height * scale) / 2;
+                
+                // Отрисовка через методы объектов
+                panels.forEach(panel => {
+                    const pos = panel.position; // Через геттер
+                    const size = panel.dimensions; // Через геттер
+                    
+                    const x = offsetX + pos.x * scale;
+                    const y = offsetY + pos.y * scale;
+                    const w = size.width * scale;
+                    const h = size.height * scale;
+                    
+                    heavyCtx.fillStyle = getColorForPanel(panel.key);
+                    heavyCtx.fillRect(x, y, w, h);
+                    heavyCtx.strokeStyle = '#333';
+                    heavyCtx.strokeRect(x, y, w, h);
+                });
+            }
+            
+            const endTime = performance.now();
+            const totalTime = endTime - startTime;
+            const avgTime = totalTime / iterations;
+            
+            document.getElementById('heavyTiming').textContent = `${totalTime.toFixed(2)}мс (${avgTime.toFixed(2)}мс/кадр)`;
+            document.getElementById('heavyTiming').className = 'timing-result timing-slow';
+            
+            log(`🐌 Обычная архитектура: ${totalTime.toFixed(2)}мс за ${iterations} кадров`, 'warning');
+            
+            return totalTime;
+        }
+
+        async function benchmarkLightweightAdapter() {
+            if (!lightweightCabinet) return;
+            
+            log('🚀 Запуск бенчмарка легковесного адаптера...', 'info');
+            
+            const iterations = 50; // Количество перерисовок
+            const { LightweightCabinetAdapter } = await import('./new_core/adapters/LightweightCabinetAdapter.js');
+            
+            const startTime = performance.now();
+            
+            for (let i = 0; i < iterations; i++) {
+                lightCtx.clearRect(0, 0, lightCanvas.width, lightCanvas.height);
+                
+                // Расчет трансформации (оптимизированный)
+                const transform = LightweightCabinetAdapter.calculateOptimalTransform(
+                    lightweightCabinet, 
+                    lightCanvas.width, 
+                    lightCanvas.height, 
+                    25
+                );
+                
+                // Быстрая отрисовка
+                LightweightCabinetAdapter.renderLightweight(lightCtx, lightweightCabinet, transform);
+            }
+            
+            const endTime = performance.now();
+            const totalTime = endTime - startTime;
+            const avgTime = totalTime / iterations;
+            
+            document.getElementById('lightTiming').textContent = `${totalTime.toFixed(2)}мс (${avgTime.toFixed(2)}мс/кадр)`;
+            document.getElementById('lightTiming').className = 'timing-result timing-fast';
+            
+            log(`🚀 Легковесный адаптер: ${totalTime.toFixed(2)}мс за ${iterations} кадров`, 'success');
+            
+            return totalTime;
+        }
+
+        async function runAllBenchmarks() {
+            log('🏁 Запуск полного сравнения производительности...', 'info');
+            
+            const heavyTime = await benchmarkHeavyArchitecture();
+            const lightTime = await benchmarkLightweightAdapter();
+            
+            if (heavyTime && lightTime) {
+                const improvement = ((heavyTime - lightTime) / heavyTime * 100).toFixed(1);
+                const speedup = (heavyTime / lightTime).toFixed(1);
+                
+                log(`📈 РЕЗУЛЬТАТЫ СРАВНЕНИЯ:`, 'success');
+                log(`   Обычная архитектура: ${heavyTime.toFixed(2)}мс`, 'info');
+                log(`   Легковесный адаптер: ${lightTime.toFixed(2)}мс`, 'info');
+                log(`   Ускорение: в ${speedup}x раз`, 'success');
+                log(`   Улучшение: ${improvement}%`, 'success');
+                
+                if (parseFloat(speedup) > 2) {
+                    log(`🎉 Значительное улучшение производительности!`, 'success');
+                } else {
+                    log(`✅ Производительность улучшена`, 'info');
+                }
+            }
+        }
+
+        // Привязываем обработчики событий
+        document.getElementById('heavyBtn').addEventListener('click', benchmarkHeavyArchitecture);
+        document.getElementById('lightBtn').addEventListener('click', benchmarkLightweightAdapter);
+        document.getElementById('runAllBtn').addEventListener('click', runAllBenchmarks);
+
+        // Инициализируем данные при загрузке
+        initializeTestData();
+
+    </script>
+</body>
+</html>

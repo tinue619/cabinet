@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Cabinet Designer - Интерактивная версия</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f6fa;
+            overflow: hidden;
+        }
+        
+        .app {
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 60px 1fr;
+            height: 100vh;
+        }
+        
+        .header {
+            grid-column: 1 / -1;
+            background: #2c3e50;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            justify-content: space-between;
+        }
+        
+        .header h1 {
+            font-size: 1.5em;
+            font-weight: 300;
+        }
+        
+        .version {
+            background: #3498db;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+        }
+        
+        .left-panel, .right-panel {
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+        
+        .right-panel {
+            border-right: none;
+            border-left: 1px solid #ddd;
+        }
+        
+        .panel-section {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .panel-section h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 1em;
+        }
+        
+        .dimension-input {
+            margin-bottom: 10px;
+        }
+        
+        .dimension-input label {
+            display: block;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 4px;
+        }
+        
+        .dimension-input input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        
+        .canvas-area {
+            position: relative;
+            background: #ecf0f1;
+            overflow: hidden;
+        }
+        
+        #canvas {
+            display: block;
+            background: white;
+            border: 1px solid #bdc3c7;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            cursor: grab;
+        }
+        
+        #canvas:active {
+            cursor: grabbing;
+        }
+        
+        .canvas-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            gap: 4px;
+        }
+        
+        .zoom-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #bdc3c7;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        
+        .zoom-btn:hover {
+            background: #ecf0f1;
+        }
+        
+        .zoom-info {
+            padding: 8px;
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        
+        .panel-list {
+            list-style: none;
+        }
+        
+        .panel-item {
+            padding: 8px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8f9fa;
+        }
+        
+        .panel-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .panel-item.selected {
+            background: #2196f3;
+            color: white;
+            border-color: #1976d2;
+        }
+        
+        .panel-name {
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        
+        .panel-dimensions {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .panel-item.selected .panel-dimensions {
+            color: #bbdefb;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+        
+        .section-management {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .section-btn {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ffc107;
+            background: #fff8dc;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+        
+        .section-btn:hover {
+            background: #ffeaa7;
+        }
+        
+        .divider-controls {
+            background: #e8f5e8;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        
+        .divider-btn {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #4caf50;
+            background: #f1f8e9;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+        
+        .divider-btn:hover {
+            background: #c8e6c9;
+        }
+        
+        .mode-selector {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        .mode-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div>
+                <h1>🎮 Cabinet Designer</h1>
+                <span class="version">Interactive v3.3</span>
+            </div>
+            <div id="status">Загрузка...</div>
+        </header>
+        
+        <div class="left-panel">
+            <div class="panel-section">
+                <h3>🏗️ Размеры шкафа</h3>
+                <div class="dimension-input">
+                    <label>Ширина (мм)</label>
+                    <input type="number" id="width" value="800" min="300" max="3000">
+                </div>
+                <div class="dimension-input">
+                    <label>Высота (мм)</label>
+                    <input type="number" id="height" value="2000" min="500" max="3000">
+                </div>
+                <div class="dimension-input">
+                    <label>Глубина (мм)</label>
+                    <input type="number" id="depth" value="600" min="200" max="1000">
+                </div>
+                <div class="dimension-input">
+                    <label>Высота цоколя (мм)</label>
+                    <input type="number" id="baseHeight" value="100" min="50" max="200">
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>🎮 Интерактивность</h3>
+                <div class="mode-selector">
+                    <button class="mode-btn active" data-mode="view">Просмотр</button>
+                    <button class="mode-btn" data-mode="edit">Правка</button>
+                </div>
+                
+                <div class="divider-controls">
+                    <h4 style="margin-bottom: 8px;">📐 Разделители</h4>
+                    <button class="divider-btn" id="add-vertical-divider">
+                        ➕ Вертикальный разделитель
+                    </button>
+                    <button class="divider-btn" id="add-horizontal-divider">
+                        ➕ Горизонтальный разделитель
+                    </button>
+                </div>
+                
+                <div class="section-management">
+                    <h4 style="margin-bottom: 8px;">📦 Секции</h4>
+                    <button class="section-btn" id="show-sections">
+                        👁️ Показать секции
+                    </button>
+                    <button class="section-btn" id="auto-sections">
+                        🔄 Пересчитать секции
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-area">
+            <canvas id="canvas" width="800" height="600"></canvas>
+            
+            <div class="canvas-controls">
+                <button class="zoom-btn" id="zoom-in" title="Приблизить">+</button>
+                <button class="zoom-btn" id="zoom-out" title="Отдалить">−</button>
+                <button class="zoom-btn" id="zoom-fit" title="По размеру">⊡</button>
+                <div class="zoom-info">
+                    <span id="zoom-level">100%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="right-panel">
+            <div class="panel-section">
+                <h3>📊 Статистика</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="panels-count">8</div>
+                        <div class="stat-label">Панелей</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="sections-count">1</div>
+                        <div class="stat-label">Секций</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="dividers-count">0</div>
+                        <div class="stat-label">Разделителей</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="cabinet-volume">0.96</div>
+                        <div class="stat-label">м³</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>📋 Список деталей</h3>
+                <ul class="panel-list" id="panels-list">
+                    <!-- Будет заполнено JS -->
+                </ul>
+            </div>
+            
+            <div class="panel-section">
+                <h3>🔍 Выбранная панель</h3>
+                <div id="selected-panel-info">
+                    <p style="color: #7f8c8d; font-style: italic;">Нажмите на панель для выбора</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 🎮 ИНТЕРАКТИВНАЯ СИСТЕМА CABINET DESIGNER
+        // Application Layer - полная интерактивность
+
+        class InteractiveCabinetDesigner {
+            constructor() {
+                this.cabinet = null;
+                this.lightweightCabinet = null;
+                this.selectedPanel = null;
+                this.currentMode = 'view';
+                this.showSections = false;
+                this.dividers = [];
+                
+                // Canvas state
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                this.isDragging = false;
+                this.lastMousePos = { x: 0, y: 0 };
+                
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    // Импортируем ядро и адаптер
+                    const { Cabinet } = await import('./new_core/entities/Cabinet.js');
+                    const { LightweightCabinetAdapter } = await import('./new_core/adapters/LightweightCabinetAdapter.js');
+                    
+                    this.Cabinet = Cabinet;
+                    this.LightweightCabinetAdapter = LightweightCabinetAdapter;
+                    
+                    // Создаем начальный шкаф
+                    await this.createCabinet();
+                    
+                    // Настраиваем интерфейс
+                    this.setupUI();
+                    this.setupCanvas();
+                    
+                    document.getElementById('status').textContent = '✅ Готов к работе';
+                    
+                } catch (error) {
+                    console.error('Init error:', error);
+                    document.getElementById('status').textContent = '❌ Ошибка загрузки';
+                }
+            }
+            
+            async createCabinet() {
+                const width = parseInt(document.getElementById('width').value);
+                const height = parseInt(document.getElementById('height').value);
+                const depth = parseInt(document.getElementById('depth').value);
+                const baseHeight = parseInt(document.getElementById('baseHeight').value);
+                
+                this.cabinet = new this.Cabinet({
+                    width, height, depth, baseHeight
+                });
+                
+                this.cabinet.generate();
+                
+                // Создаем легковесное представление для быстрой отрисовки
+                this.lightweightCabinet = this.LightweightCabinetAdapter
+                    .createLightweightRepresentation(this.cabinet);
+                
+                this.updateStats();
+                this.updatePanelsList();
+                this.render();
+            }
+            
+            setupUI() {
+                // Размеры шкафа
+                ['width', 'height', 'depth', 'baseHeight'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => {
+                        this.createCabinet();
+                    });
+                });
+                
+                // Зум контроллы
+                document.getElementById('zoom-in').addEventListener('click', () => {
+                    this.setZoom(this.scale * 1.2);
+                });
+                
+                document.getElementById('zoom-out').addEventListener('click', () => {
+                    this.setZoom(this.scale / 1.2);
+                });
+                
+                document.getElementById('zoom-fit').addEventListener('click', () => {
+                    this.fitToCanvas();
+                });
+                
+                // Режимы
+                document.querySelectorAll('.mode-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.currentMode = btn.dataset.mode;
+                        this.render();
+                    });
+                });
+                
+                // Разделители
+                document.getElementById('add-vertical-divider').addEventListener('click', () => {
+                    this.addDivider('vertical');
+                });
+                
+                document.getElementById('add-horizontal-divider').addEventListener('click', () => {
+                    this.addDivider('horizontal');
+                });
+                
+                // Секции
+                document.getElementById('show-sections').addEventListener('click', () => {
+                    this.showSections = !this.showSections;
+                    const btn = document.getElementById('show-sections');
+                    btn.textContent = this.showSections ? '🙈 Скрыть секции' : '👁️ Показать секции';
+                    this.render();
+                });
+                
+                document.getElementById('auto-sections').addEventListener('click', () => {
+                    this.recalculateSections();
+                });
+            }
+            
+            setupCanvas() {
+                this.canvas.addEventListener('mousedown', (e) => {
+                    this.isDragging = true;
+                    this.lastMousePos = this.getMousePos(e);
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const mousePos = this.getMousePos(e);
+                    
+                    if (this.isDragging) {
+                        this.offsetX += mousePos.x - this.lastMousePos.x;
+                        this.offsetY += mousePos.y - this.lastMousePos.y;
+                        this.render();
+                    } else if (this.currentMode === 'view') {
+                        // Подсветка панелей при наведении
+                        const panel = this.getPanelAtMouse(mousePos);
+                        this.canvas.style.cursor = panel ? 'pointer' : 'grab';
+                    }
+                    
+                    this.lastMousePos = mousePos;
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    this.isDragging = false;
+                });
+                
+                this.canvas.addEventListener('click', (e) => {
+                    if (this.currentMode === 'view') {
+                        const mousePos = this.getMousePos(e);
+                        const panel = this.getPanelAtMouse(mousePos);
+                        if (panel) {
+                            this.selectPanel(panel);
+                        }
+                    }
+                });
+                
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+                    this.setZoom(this.scale * factor);
+                });
+                
+                // Автоматический фит при ресайзе
+                window.addEventListener('resize', () => {
+                    setTimeout(() => this.fitToCanvas(), 100);
+                });
+                
+                this.fitToCanvas();
+            }
+            
+            setZoom(newScale) {
+                this.scale = Math.max(0.1, Math.min(5, newScale));
+                document.getElementById('zoom-level').textContent = Math.round(this.scale * 100) + '%';
+                this.render();
+            }
+            
+            fitToCanvas() {
+                if (!this.lightweightCabinet) return;
+                
+                const padding = 50;
+                const availableWidth = this.canvas.width - 2 * padding;
+                const availableHeight = this.canvas.height - 2 * padding;
+                
+                const cabinetWidth = this.lightweightCabinet.dimensions.width;
+                const cabinetHeight = this.lightweightCabinet.dimensions.height;
+                
+                this.scale = Math.min(
+                    availableWidth / cabinetWidth,
+                    availableHeight / cabinetHeight
+                );
+                
+                this.offsetX = 0;
+                this.offsetY = 0;
+                
+                this.setZoom(this.scale);
+            }
+            
+            render() {
+                if (!this.lightweightCabinet) return;
+                
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Расчет трансформации
+                const cabinetWidth = this.lightweightCabinet.dimensions.width * this.scale;
+                const cabinetHeight = this.lightweightCabinet.dimensions.height * this.scale;
+                
+                const centerX = this.canvas.width / 2 + this.offsetX;
+                const centerY = this.canvas.height / 2 + this.offsetY;
+                
+                const startX = centerX - cabinetWidth / 2;
+                const startY = centerY - cabinetHeight / 2;
+                
+                // Быстрая отрисовка панелей
+                this.LightweightCabinetAdapter.renderLightweight(this.ctx, this.lightweightCabinet, {
+                    scale: this.scale,
+                    offsetX: startX,
+                    offsetY: startY
+                });
+                
+                // Отрисовка секций
+                if (this.showSections) {
+                    this.renderSections(startX, startY);
+                }
+                
+                // Отрисовка разделителей
+                this.renderDividers(startX, startY);
+                
+                // Подсветка выбранной панели
+                if (this.selectedPanel) {
+                    this.highlightPanel(this.selectedPanel, startX, startY);
+                }
+            }
+            
+            renderSections(offsetX, offsetY) {
+                this.ctx.fillStyle = 'rgba(74, 158, 255, 0.2)';
+                this.ctx.strokeStyle = 'rgba(74, 158, 255, 0.8)';
+                this.ctx.lineWidth = 2;
+                
+                this.lightweightCabinet.sections.forEach(section => {
+                    if (section.bounds) {
+                        const bounds = section.bounds;
+                        const x = offsetX + bounds.left * this.scale;
+                        const y = offsetY + bounds.top * this.scale;
+                        const w = (bounds.right - bounds.left) * this.scale;
+                        const h = (bounds.bottom - bounds.top) * this.scale;
+                        
+                        this.ctx.fillRect(x, y, w, h);
+                        this.ctx.strokeRect(x, y, w, h);
+                    }
+                });
+            }
+            
+            renderDividers(offsetX, offsetY) {
+                this.ctx.strokeStyle = '#e74c3c';
+                this.ctx.lineWidth = 3;
+                this.ctx.setLineDash([5, 5]);
+                
+                this.dividers.forEach(divider => {
+                    this.ctx.beginPath();
+                    if (divider.type === 'vertical') {
+                        const x = offsetX + divider.position * this.scale;
+                        this.ctx.moveTo(x, offsetY);
+                        this.ctx.lineTo(x, offsetY + this.lightweightCabinet.dimensions.height * this.scale);
+                    } else {
+                        const y = offsetY + divider.position * this.scale;
+                        this.ctx.moveTo(offsetX, y);
+                        this.ctx.lineTo(offsetX + this.lightweightCabinet.dimensions.width * this.scale, y);
+                    }
+                    this.ctx.stroke();
+                });
+                
+                this.ctx.setLineDash([]);
+            }
+            
+            highlightPanel(panel, offsetX, offsetY) {
+                const pos = panel.position;
+                const size = panel.dimensions;
+                
+                const x = offsetX + pos.x * this.scale;
+                const y = offsetY + pos.y * this.scale;
+                const w = size.width * this.scale;
+                const h = size.height * this.scale;
+                
+                this.ctx.strokeStyle = '#2196f3';
+                this.ctx.lineWidth = 3;
+                this.ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+                
+                this.ctx.fillStyle = 'rgba(33, 150, 243, 0.2)';
+                this.ctx.fillRect(x, y, w, h);
+            }
+            
+            getPanelAtMouse(mousePos) {
+                if (!this.lightweightCabinet) return null;
+                
+                const cabinetWidth = this.lightweightCabinet.dimensions.width * this.scale;
+                const cabinetHeight = this.lightweightCabinet.dimensions.height * this.scale;
+                
+                const centerX = this.canvas.width / 2 + this.offsetX;
+                const centerY = this.canvas.height / 2 + this.offsetY;
+                
+                const startX = centerX - cabinetWidth / 2;
+                const startY = centerY - cabinetHeight / 2;
+                
+                for (const panel of this.lightweightCabinet.panels) {
+                    const x = startX + panel.position.x * this.scale;
+                    const y = startY + panel.position.y * this.scale;
+                    const w = panel.dimensions.width * this.scale;
+                    const h = panel.dimensions.height * this.scale;
+                    
+                    if (mousePos.x >= x && mousePos.x <= x + w &&
+                        mousePos.y >= y && mousePos.y <= y + h) {
+                        return panel;
+                    }
+                }
+                
+                return null;
+            }
+            
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+            
+            selectPanel(panel) {
+                this.selectedPanel = panel;
+                
+                // Обновляем список панелей
+                document.querySelectorAll('.panel-item').forEach(item => {
+                    item.classList.remove('selected');
+                    if (item.dataset.panelKey === panel.key) {
+                        item.classList.add('selected');
+                    }
+                });
+                
+                // Показываем информацию о панели
+                document.getElementById('selected-panel-info').innerHTML = `
+                    <h4>${panel.name}</h4>
+                    <p><strong>Размеры:</strong> ${panel.dimensions.width}×${panel.dimensions.height}×${panel.dimensions.depth} мм</p>
+                    <p><strong>Позиция:</strong> x=${panel.position.x}, y=${panel.position.y}, z=${panel.position.z}</p>
+                    <p><strong>Материал:</strong> ${panel.material}</p>
+                `;
+                
+                this.render();
+            }
+            
+            addDivider(type) {
+                const dimension = type === 'vertical' ? 
+                    this.lightweightCabinet.dimensions.width : 
+                    this.lightweightCabinet.dimensions.height;
+                
+                const position = dimension / 2; // По центру
+                
+                this.dividers.push({
+                    type,
+                    position,
+                    id: `divider_${Date.now()}`
+                });
+                
+                this.updateStats();
+                this.render();
+            }
+            
+            recalculateSections() {
+                // Пересоздаем шкаф для пересчета секций
+                this.createCabinet();
+            }
+            
+            updateStats() {
+                if (!this.lightweightCabinet) return;
+                
+                const dims = this.lightweightCabinet.dimensions;
+                const volume = (dims.width * dims.height * dims.depth / 1000000000).toFixed(2);
+                
+                document.getElementById('panels-count').textContent = this.lightweightCabinet.panels.length;
+                document.getElementById('sections-count').textContent = this.lightweightCabinet.sections.length;
+                document.getElementById('dividers-count').textContent = this.dividers.length;
+                document.getElementById('cabinet-volume').textContent = volume;
+            }
+            
+            updatePanelsList() {
+                const listContainer = document.getElementById('panels-list');
+                listContainer.innerHTML = '';
+                
+                this.lightweightCabinet.panels.forEach(panel => {
+                    const item = document.createElement('li');
+                    item.className = 'panel-item';
+                    item.dataset.panelKey = panel.key;
+                    item.innerHTML = `
+                        <div class="panel-name">${panel.name}</div>
+                        <div class="panel-dimensions">${panel.dimensions.width}×${panel.dimensions.height}×${panel.dimensions.depth} мм</div>
+                    `;
+                    
+                    item.addEventListener('click', () => {
+                        this.selectPanel(panel);
+                    });
+                    
+                    listContainer.appendChild(item);
+                });
+            }
+        }
+
+        // 🚀 Запускаем интерактивную систему
+        new InteractiveCabinetDesigner();
+
+    </script>
+</body>
+</html>

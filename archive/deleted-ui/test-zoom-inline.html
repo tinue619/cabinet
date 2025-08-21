@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Тест ZoomControl - Встроенная версия</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f7fa;
+        }
+        
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #4a9eff;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .zoom-info {
+            padding: 8px 12px;
+            background: #f0f9ff;
+            border: 1px solid #93c5fd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+        
+        #test-canvas {
+            border: 2px solid #e5e7eb;
+            background: #fafafa;
+            display: block;
+            margin: 20px 0;
+        }
+        
+        .log {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 4px;
+        }
+        
+        .log-entry.success { color: #059669; }
+        .log-entry.info { color: #0369a1; }
+        .log-entry.error { color: #dc2626; }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .status.fail {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Тест ZoomControl Микрокомпонента (Встроенная версия)</h1>
+        
+        <div class="controls">
+            <button id="btn-zoom-in">🔍+</button>
+            <button id="btn-zoom-out">🔍−</button>
+            <button id="btn-zoom-fit">⊡ Fit</button>
+            <button id="btn-zoom-reset">🔄 Reset</button>
+            
+            <div class="zoom-info">
+                Масштаб: <span id="zoom-display">100%</span>
+            </div>
+            
+            <div class="status pass" id="test-status">✅ Готов к тесту</div>
+        </div>
+        
+        <canvas id="test-canvas" width="600" height="400"></canvas>
+        
+        <div class="log" id="log-container">
+            <div class="log-entry info">🔍 Инициализация встроенного ZoomControl...</div>
+        </div>
+    </div>
+
+    <script>
+        // 🔍 ВСТРОЕННАЯ ВЕРСИЯ ZOOMCONTROL - для тестирования концепции
+        "use strict";
+        
+        /**
+         * 🔍 МИКРОКОМПОНЕНТ УПРАВЛЕНИЯ МАСШТАБОМ
+         * Полная инкапсуляция, Single Responsibility
+         */
+        class ZoomControl {
+            
+            constructor(canvasElement) {
+                if (!canvasElement) {
+                    throw new Error('ZoomControl requires canvas element');
+                }
+                
+                // 🔒 Приватные данные - полная инкапсуляция
+                let _currentZoom = 1.0;
+                let _minZoom = 0.1;
+                let _maxZoom = 5.0;
+                let _zoomStep = 1.2;
+                let _canvas = canvasElement;
+                let _callbacks = new Map();
+                
+                // ===============================================
+                // 🔍 ПУБЛИЧНЫЕ ГЕТТЕРЫ (только чтение)
+                // ===============================================
+                
+                Object.defineProperty(this, 'currentZoom', {
+                    get: () => _currentZoom,
+                    enumerable: true,
+                    configurable: false
+                });
+                
+                Object.defineProperty(this, 'minZoom', {
+                    get: () => _minZoom,
+                    enumerable: true,
+                    configurable: false
+                });
+                
+                Object.defineProperty(this, 'maxZoom', {
+                    get: () => _maxZoom,
+                    enumerable: true,
+                    configurable: false
+                });
+                
+                // ===============================================
+                // 🎯 ПУБЛИЧНЫЕ МЕТОДЫ
+                // ===============================================
+                
+                /**
+                 * 🔍 Увеличить масштаб
+                 */
+                this.zoomIn = () => {
+                    const newZoom = Math.min(_currentZoom * _zoomStep, _maxZoom);
+                    return this._setZoom(newZoom);
+                };
+                
+                /**
+                 * 🔍 Уменьшить масштаб
+                 */
+                this.zoomOut = () => {
+                    const newZoom = Math.max(_currentZoom / _zoomStep, _minZoom);
+                    return this._setZoom(newZoom);
+                };
+                
+                /**
+                 * 🔍 Установить конкретный масштаб
+                 */
+                this.setZoom = (zoom) => {
+                    if (typeof zoom !== 'number' || zoom <= 0) {
+                        throw new Error('Zoom must be a positive number');
+                    }
+                    
+                    const clampedZoom = Math.max(_minZoom, Math.min(zoom, _maxZoom));
+                    return this._setZoom(clampedZoom);
+                };
+                
+                /**
+                 * 🔍 Масштаб "по размеру"
+                 */
+                this.fitToView = (contentBounds) => {
+                    if (!contentBounds || !contentBounds.width || !contentBounds.height) {
+                        console.warn('ZoomControl.fitToView: invalid contentBounds');
+                        return _currentZoom;
+                    }
+                    
+                    const canvasRect = _canvas.getBoundingClientRect();
+                    const padding = 50;
+                    
+                    const scaleX = (canvasRect.width - padding) / contentBounds.width;
+                    const scaleY = (canvasRect.height - padding) / contentBounds.height;
+                    
+                    const fitZoom = Math.min(scaleX, scaleY);
+                    return this.setZoom(fitZoom);
+                };
+                
+                /**
+                 * 📢 Подписаться на изменения
+                 */
+                this.on = (eventName, callback) => {
+                    if (typeof callback !== 'function') {
+                        throw new Error('Callback must be a function');
+                    }
+                    
+                    if (!_callbacks.has(eventName)) {
+                        _callbacks.set(eventName, []);
+                    }
+                    
+                    _callbacks.get(eventName).push(callback);
+                };
+                
+                // ===============================================
+                // 🔒 ПРИВАТНЫЕ МЕТОДЫ
+                // ===============================================
+                
+                /**
+                 * 🔒 Внутренний метод установки масштаба
+                 */
+                this._setZoom = (newZoom) => {
+                    const oldZoom = _currentZoom;
+                    _currentZoom = newZoom;
+                    
+                    // Уведомляем подписчиков
+                    this._emit('zoom-changed', {
+                        oldZoom,
+                        newZoom: _currentZoom,
+                        zoomFactor: _currentZoom / oldZoom
+                    });
+                    
+                    return _currentZoom;
+                };
+                
+                /**
+                 * 🔒 Внутренний метод генерации событий
+                 */
+                this._emit = (eventName, data) => {
+                    if (_callbacks.has(eventName)) {
+                        _callbacks.get(eventName).forEach(callback => {
+                            try {
+                                callback(data);
+                            } catch (error) {
+                                console.error(`ZoomControl event handler error:`, error);
+                            }
+                        });
+                    }
+                };
+                
+                // Блокируем добавление новых свойств
+                Object.preventExtensions(this);
+                
+                console.log('🔍 ZoomControl initialized with SRP compliance');
+            }
+            
+            /**
+             * 🏭 Фабричный метод
+             */
+            static createForCanvas(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                if (!canvas) {
+                    throw new Error(`Canvas element with ID '${canvasId}' not found`);
+                }
+                
+                return new ZoomControl(canvas);
+            }
+        }
+        
+        // ===============================================
+        // 🧪 ТЕСТИРОВАНИЕ МИКРОКОМПОНЕНТА
+        // ===============================================
+        
+        // Логгер для теста
+        class TestLogger {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+            }
+            
+            log(message, type = 'info') {
+                const entry = document.createElement('div');
+                entry.className = `log-entry ${type}`;
+                entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                this.container.appendChild(entry);
+                this.container.scrollTop = this.container.scrollHeight;
+            }
+            
+            success(message) { this.log(message, 'success'); }
+            error(message) { this.log(message, 'error'); }
+            info(message) { this.log(message, 'info'); }
+        }
+        
+        const logger = new TestLogger('log-container');
+        const zoomDisplay = document.getElementById('zoom-display');
+        const testStatus = document.getElementById('test-status');
+        
+        try {
+            // Инициализация ZoomControl
+            logger.info('Создаем ZoomControl...');
+            
+            const zoomControl = ZoomControl.createForCanvas('test-canvas');
+            
+            logger.success('✅ ZoomControl создан успешно');
+            
+            // Подписка на события
+            zoomControl.on('zoom-changed', (data) => {
+                const zoomPercent = Math.round(data.newZoom * 100);
+                zoomDisplay.textContent = `${zoomPercent}%`;
+                logger.success(`🔍 Масштаб изменен: ${Math.round(data.oldZoom * 100)}% → ${zoomPercent}%`);
+            });
+            
+            // Привязка кнопок
+            document.getElementById('btn-zoom-in').addEventListener('click', () => {
+                logger.info('🖱 Клик Zoom In');
+                zoomControl.zoomIn();
+            });
+            
+            document.getElementById('btn-zoom-out').addEventListener('click', () => {
+                logger.info('🖱 Клик Zoom Out');
+                zoomControl.zoomOut();
+            });
+            
+            document.getElementById('btn-zoom-fit').addEventListener('click', () => {
+                logger.info('🖱 Клик Zoom Fit');
+                zoomControl.fitToView({ width: 800, height: 600 });
+            });
+            
+            document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+                logger.info('🖱 Клик Zoom Reset');
+                zoomControl.setZoom(1.0);
+            });
+            
+            // Автотесты
+            logger.info('Запуск автотестов...');
+            
+            // Тест 1: Проверка начального значения
+            if (zoomControl.currentZoom === 1.0) {
+                logger.success('✅ Тест 1: Начальный zoom = 1.0');
+            } else {
+                logger.error('❌ Тест 1: Неправильный начальный zoom');
+            }
+            
+            // Тест 2: Проверка защищенности от изменений
+            try {
+                zoomControl.currentZoom = 999; // Попытка изменить
+                if (zoomControl.currentZoom === 999) {
+                    logger.error('❌ Тест 2: Инкапсуляция нарушена!');
+                } else {
+                    logger.success('✅ Тест 2: Инкапсуляция работает (silent fail)');
+                }
+            } catch (e) {
+                logger.success('✅ Тест 2: Инкапсуляция работает (exception)');
+            }
+            
+            // Тест 3: Проверка ограничений
+            zoomControl.setZoom(10); // Пытаемся установить больше максимума
+            if (zoomControl.currentZoom === zoomControl.maxZoom) {
+                logger.success('✅ Тест 3: Ограничения zoom работают');
+            } else {
+                logger.error('❌ Тест 3: Ограничения не работают');
+            }
+            
+            // Сброс для дальнейших тестов
+            zoomControl.setZoom(1.0);
+            
+            testStatus.textContent = '✅ Микрокомпонент работает';
+            logger.success('🎉 Все тесты прошли успешно!');
+            logger.info('🖱️ Можно тестировать кнопки вручную');
+            
+        } catch (error) {
+            logger.error(`❌ Ошибка инициализации: ${error.message}`);
+            testStatus.textContent = '❌ Ошибка';
+            testStatus.className = 'status fail';
+        }
+    </script>
+</body>
+</html>

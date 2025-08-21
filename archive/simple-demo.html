@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet Designer - Простая демонстрация</title>
+    <style>
+        /* Минимальные стили - НЕТ раздражающему UI! */
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            border: 2px solid #0f0;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .controls label {
+            display: inline-block;
+            width: 120px;
+            color: #0f0;
+        }
+        
+        .controls input {
+            background: #000;
+            border: 1px solid #0f0;
+            color: #0f0;
+            padding: 5px;
+            width: 100px;
+            font-family: inherit;
+        }
+        
+        .controls button {
+            background: #000;
+            border: 2px solid #0f0;
+            color: #0f0;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-family: inherit;
+            font-weight: bold;
+        }
+        
+        .controls button:hover {
+            background: #0f0;
+            color: #000;
+        }
+        
+        .results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .result-panel {
+            background: #111;
+            border: 1px solid #333;
+            padding: 15px;
+        }
+        
+        .result-panel h3 {
+            color: #0f0;
+            border-bottom: 1px solid #333;
+            padding-bottom: 10px;
+        }
+        
+        .stats {
+            color: #ff0;
+        }
+        
+        .panel-list {
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 12px;
+        }
+        
+        .error {
+            color: #f00;
+            background: #300;
+            border: 1px solid #f00;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            color: #0f0;
+            background: #030;
+            border: 1px solid #0f0;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        
+        /* Простая визуализация 2D */
+        .canvas-container {
+            border: 1px solid #333;
+            background: #111;
+            margin-top: 20px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        canvas {
+            border: 1px solid #0f0;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 CABINET DESIGNER</h1>
+            <p>Простая демонстрация без раздражающего UI</p>
+            <p>Только архитектурное ядро + минимальный интерфейс</p>
+        </div>
+        
+        <div class="controls">
+            <h3>⚙️ Параметры шкафа:</h3>
+            <label>Ширина (мм):</label>
+            <input type="number" id="width" value="800" min="300" max="3000">
+            
+            <label>Высота (мм):</label>
+            <input type="number" id="height" value="2000" min="500" max="3000">
+            
+            <label>Глубина (мм):</label>
+            <input type="number" id="depth" value="600" min="200" max="800">
+            
+            <label>Цоколь (мм):</label>
+            <input type="number" id="baseHeight" value="100" min="50" max="200">
+            
+            <button onclick="generateCabinet()">🏗️ СОЗДАТЬ ШКАФ</button>
+            <button onclick="clearResults()">🗑️ ОЧИСТИТЬ</button>
+        </div>
+        
+        <div id="messages"></div>
+        
+        <div class="results" id="results" style="display: none;">
+            <div class="result-panel">
+                <h3>📊 Статистика</h3>
+                <div id="stats" class="stats"></div>
+            </div>
+            
+            <div class="result-panel">
+                <h3>📋 Список панелей</h3>
+                <div id="panels" class="panel-list"></div>
+            </div>
+        </div>
+        
+        <div class="canvas-container" id="canvasContainer" style="display: none;">
+            <h3>📐 2D Вид (сверху)</h3>
+            <canvas id="canvas2d" width="600" height="400"></canvas>
+        </div>
+    </div>
+
+    <script type="module">
+        // 🧬 Подключаем архитектурное ядро
+        let system = null;
+        let currentCabinet = null;
+
+        // Инициализация системы
+        async function initSystem() {
+            try {
+                const { SystemFactory } = await import('./new_core/index.js');
+                system = SystemFactory.create();
+                showMessage('✅ Архитектурное ядро загружено', 'success');
+            } catch (error) {
+                showMessage(`❌ Ошибка загрузки ядра: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // Показать сообщение
+        function showMessage(text, type = 'info') {
+            const messages = document.getElementById('messages');
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = text;
+            messages.appendChild(div);
+            
+            // Удаляем старые сообщения
+            setTimeout(() => {
+                if (div.parentNode) div.parentNode.removeChild(div);
+            }, 5000);
+        }
+
+        // Главная функция создания шкафа
+        window.generateCabinet = async function() {
+            if (!system) {
+                showMessage('❌ Система не инициализирована', 'error');
+                return;
+            }
+
+            try {
+                // Получаем параметры
+                const params = {
+                    width: parseInt(document.getElementById('width').value),
+                    height: parseInt(document.getElementById('height').value),
+                    depth: parseInt(document.getElementById('depth').value),
+                    baseHeight: parseInt(document.getElementById('baseHeight').value)
+                };
+
+                showMessage('🏗️ Создаем шкаф...', 'info');
+
+                // Создаем шкаф через ядро
+                currentCabinet = system.createCabinet(params);
+                currentCabinet.generate();
+
+                showMessage('✅ Шкаф создан успешно!', 'success');
+
+                // Показываем результаты
+                displayResults();
+                draw2D();
+
+            } catch (error) {
+                showMessage(`❌ Ошибка создания шкафа: ${error.message}`, 'error');
+                console.error(error);
+            }
+        };
+
+        // Отображение результатов
+        function displayResults() {
+            if (!currentCabinet) return;
+
+            // Статистика
+            const stats = currentCabinet.getStats();
+            document.getElementById('stats').innerHTML = `
+                <div>📦 Всего панелей: ${stats.totalPanels}</div>
+                <div>🔧 Материалов: ${stats.materialsUsed}</div>
+                <div>📐 Объем: ${stats.totalVolume} м³</div>
+                <div>💰 Стоимость: ${stats.estimatedCost} руб</div>
+            `;
+
+            // Список панелей
+            const panels = currentCabinet.getPanels();
+            let panelsHtml = '';
+            panels.forEach((panel, index) => {
+                const data = panel.getData();
+                panelsHtml += `
+                    <div style="margin-bottom: 10px; padding: 5px; border: 1px solid #333;">
+                        <strong>${index + 1}. ${data.name}</strong><br>
+                        📏 ${data.width}×${data.height}×${data.thickness}мм<br>
+                        🏗️ ${data.material.name}<br>
+                        📍 (${data.position.x}, ${data.position.y}, ${data.position.z})
+                    </div>
+                `;
+            });
+            document.getElementById('panels').innerHTML = panelsHtml;
+
+            // Показываем блок результатов
+            document.getElementById('results').style.display = 'grid';
+            document.getElementById('canvasContainer').style.display = 'block';
+        }
+
+        // Простая 2D визуализация
+        function draw2D() {
+            if (!currentCabinet) return;
+
+            const canvas = document.getElementById('canvas2d');
+            const ctx = canvas.getContext('2d');
+            
+            // Очищаем canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Получаем панели
+            const panels = currentCabinet.getPanels();
+            const cabinetData = currentCabinet.getData();
+            
+            // Масштаб для отображения
+            const scale = Math.min(
+                (canvas.width - 40) / cabinetData.dimensions.width,
+                (canvas.height - 40) / cabinetData.dimensions.depth
+            );
+
+            const offsetX = 20;
+            const offsetY = 20;
+
+            // Рисуем панели (вид сверху)
+            panels.forEach(panel => {
+                const data = panel.getData();
+                
+                // Цвет в зависимости от материала
+                let color = '#0f0'; // ЛДСП - зеленый
+                if (data.material.name.includes('ХДФ')) color = '#ff0'; // ХДФ - желтый
+                if (data.material.name.includes('МДФ')) color = '#f80'; // МДФ - оранжевый
+                
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                
+                // Координаты для 2D вида (сверху)
+                const x = offsetX + data.position.x * scale;
+                const y = offsetY + data.position.z * scale;
+                const w = data.width * scale;
+                const h = data.depth * scale;
+                
+                ctx.strokeRect(x, y, w, h);
+                
+                // Подпись
+                ctx.fillStyle = color;
+                ctx.font = '10px Courier';
+                ctx.fillText(data.name.slice(0, 8), x + 2, y + 12);
+            });
+
+            // Рамка шкафа
+            ctx.strokeStyle = '#0f0';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(
+                offsetX, 
+                offsetY, 
+                cabinetData.dimensions.width * scale, 
+                cabinetData.dimensions.depth * scale
+            );
+        }
+
+        // Очистка результатов
+        window.clearResults = function() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('canvasContainer').style.display = 'none';
+            document.getElementById('messages').innerHTML = '';
+            currentCabinet = null;
+            showMessage('🗑️ Результаты очищены', 'info');
+        };
+
+        // Инициализация при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            showMessage('🚀 Загружаем архитектурное ядро...', 'info');
+            initSystem();
+        });
+
+    </script>
+</body>
+</html>

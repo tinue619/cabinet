@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔗 Тест взаимодействия микрокомпонентов</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 20px;
+            background: #f5f7fa;
+        }
+        
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .panel h2 {
+            margin: 0 0 15px 0;
+            color: #2c3e50;
+        }
+        
+        .dimension-input-group h3 {
+            margin: 0 0 15px 0;
+            color: #34495e;
+        }
+        
+        .input-row {
+            margin-bottom: 15px;
+        }
+        
+        .input-row label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .input-row input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .input-row input:focus {
+            outline: none;
+            border-color: #4a9eff;
+            box-shadow: 0 0 0 2px rgba(74, 158, 255, 0.1);
+        }
+        
+        .apply-btn {
+            width: 100%;
+            padding: 10px 16px;
+            background: #4a9eff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .apply-btn:hover {
+            background: #3a8eef;
+            transform: translateY(-1px);
+        }
+        
+        .zoom-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .zoom-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        
+        .zoom-btn:hover {
+            background: #4a9eff;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .zoom-info {
+            padding: 6px 10px;
+            background: #f0f9ff;
+            border: 1px solid #93c5fd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        #test-canvas {
+            border: 2px solid #e5e7eb;
+            background: #fafafa;
+            width: 100%;
+            height: 400px;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 11px;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            margin: 1px 0;
+            padding: 1px 4px;
+        }
+        
+        .log-entry.success { color: #059669; }
+        .log-entry.info { color: #0369a1; }
+        .log-entry.error { color: #dc2626; }
+        .log-entry.interaction { color: #7c3aed; font-weight: bold; }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .status.pass {
+            background: #dcfce7;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <!-- Левая панель: DimensionInput -->
+        <div class="panel">
+            <h2>📐 Ввод размеров</h2>
+            <div id="dimension-container"></div>
+            
+            <div class="log" id="dimension-log">
+                <div class="log-entry info">📐 Инициализация DimensionInput...</div>
+            </div>
+        </div>
+        
+        <!-- Правая панель: ZoomControl + Canvas -->
+        <div class="panel">
+            <h2>🔍 Управление масштабом</h2>
+            
+            <div class="status pass">✅ Тест взаимодействия микрокомпонентов</div>
+            
+            <div class="zoom-controls">
+                <button class="zoom-btn" id="btn-zoom-in">🔍+</button>
+                <button class="zoom-btn" id="btn-zoom-out">🔍−</button>
+                <button class="zoom-btn" id="btn-zoom-fit">⊡ Fit</button>
+                <button class="zoom-btn" id="btn-zoom-reset">🔄 Reset</button>
+                
+                <div class="zoom-info">
+                    Масштаб: <span id="zoom-display">100%</span>
+                </div>
+            </div>
+            
+            <canvas id="test-canvas"></canvas>
+            
+            <div class="log" id="zoom-log">
+                <div class="log-entry info">🔍 Инициализация ZoomControl...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 🔍 ZoomControl - микрокомпонент
+        class ZoomControl {
+            constructor(canvasElement) {
+                let _currentZoom = 1.0;
+                let _callbacks = new Map();
+                
+                Object.defineProperty(this, 'currentZoom', {
+                    get: () => _currentZoom,
+                    enumerable: true,
+                    configurable: false
+                });
+                
+                this.zoomIn = () => this._setZoom(_currentZoom * 1.2);
+                this.zoomOut = () => this._setZoom(_currentZoom / 1.2);
+                this.setZoom = (zoom) => this._setZoom(zoom);
+                
+                this.on = (eventName, callback) => {
+                    if (!_callbacks.has(eventName)) {
+                        _callbacks.set(eventName, []);
+                    }
+                    _callbacks.get(eventName).push(callback);
+                };
+                
+                this._setZoom = (newZoom) => {
+                    const oldZoom = _currentZoom;
+                    _currentZoom = Math.max(0.1, Math.min(newZoom, 5.0));
+                    
+                    this._emit('zoom-changed', { oldZoom, newZoom: _currentZoom });
+                    return _currentZoom;
+                };
+                
+                this._emit = (eventName, data) => {
+                    if (_callbacks.has(eventName)) {
+                        _callbacks.get(eventName).forEach(callback => callback(data));
+                    }
+                };
+                
+                Object.preventExtensions(this);
+            }
+            
+            static createForCanvas(canvasId) {
+                const canvas = document.getElementById(canvasId);
+                return new ZoomControl(canvas);
+            }
+        }
+        
+        // 📐 DimensionInput - микрокомпонент
+        class DimensionInput {
+            constructor(containerElement, initialDimensions = {}) {
+                let _dimensions = Object.freeze({
+                    width: initialDimensions.width || 800,
+                    height: initialDimensions.height || 2000,
+                    depth: initialDimensions.depth || 600,
+                    baseHeight: initialDimensions.baseHeight || 100
+                });
+                
+                let _callbacks = new Map();
+                let _inputs = new Map();
+                
+                Object.defineProperty(this, 'dimensions', {
+                    get: () => Object.freeze({..._dimensions}),
+                    enumerable: true,
+                    configurable: false
+                });
+                
+                this.initialize = () => {
+                    this._createInputs();
+                    this._bindEvents();
+                };
+                
+                this.setDimensions = (newDimensions) => {
+                    const oldDimensions = _dimensions;
+                    _dimensions = Object.freeze({...newDimensions});
+                    
+                    this._updateInputValues();
+                    this._emit('dimensions-changed', { oldDimensions, newDimensions: _dimensions });
+                    return true;
+                };
+                
+                this.on = (eventName, callback) => {
+                    if (!_callbacks.has(eventName)) {
+                        _callbacks.set(eventName, []);
+                    }
+                    _callbacks.get(eventName).push(callback);
+                };
+                
+                this._createInputs = () => {
+                    containerElement.innerHTML = `
+                        <div class="dimension-input-group">
+                            <h3>Габариты шкафа</h3>
+                            
+                            <div class="input-row">
+                                <label for="dim-width">Ширина (мм)</label>
+                                <input type="number" id="dim-width" value="${_dimensions.width}">
+                            </div>
+                            
+                            <div class="input-row">
+                                <label for="dim-height">Высота (мм)</label>
+                                <input type="number" id="dim-height" value="${_dimensions.height}">
+                            </div>
+                            
+                            <div class="input-row">
+                                <label for="dim-depth">Глубина (мм)</label>
+                                <input type="number" id="dim-depth" value="${_dimensions.depth}">
+                            </div>
+                            
+                            <div class="input-row">
+                                <label for="dim-base">Цоколь (мм)</label>
+                                <input type="number" id="dim-base" value="${_dimensions.baseHeight}">
+                            </div>
+                            
+                            <button type="button" id="apply-dimensions" class="apply-btn">
+                                Применить изменения
+                            </button>
+                        </div>
+                    `;
+                    
+                    _inputs.set('width', document.getElementById('dim-width'));
+                    _inputs.set('height', document.getElementById('dim-height'));
+                    _inputs.set('depth', document.getElementById('dim-depth'));
+                    _inputs.set('baseHeight', document.getElementById('dim-base'));
+                    _inputs.set('applyBtn', document.getElementById('apply-dimensions'));
+                };
+                
+                this._bindEvents = () => {
+                    const applyBtn = _inputs.get('applyBtn');
+                    if (applyBtn) {
+                        applyBtn.addEventListener('click', () => {
+                            const newDimensions = {
+                                width: parseInt(_inputs.get('width').value),
+                                height: parseInt(_inputs.get('height').value),
+                                depth: parseInt(_inputs.get('depth').value),
+                                baseHeight: parseInt(_inputs.get('baseHeight').value)
+                            };
+                            this.setDimensions(newDimensions);
+                        });
+                    }
+                };
+                
+                this._updateInputValues = () => {
+                    for (const [dimension, value] of Object.entries(_dimensions)) {
+                        const input = _inputs.get(dimension);
+                        if (input) input.value = value;
+                    }
+                };
+                
+                this._emit = (eventName, data) => {
+                    if (_callbacks.has(eventName)) {
+                        _callbacks.get(eventName).forEach(callback => callback(data));
+                    }
+                };
+                
+                Object.preventExtensions(this);
+            }
+            
+            static createForContainer(containerId, initialDimensions) {
+                const container = document.getElementById(containerId);
+                const component = new DimensionInput(container, initialDimensions);
+                component.initialize();
+                return component;
+            }
+        }
+        
+        // 🔗 КООРДИНАТОР МИКРОКОМПОНЕНТОВ
+        class ComponentCoordinator {
+            constructor() {
+                this.components = new Map();
+            }
+            
+            log(containerId, message, type = 'info') {
+                const container = document.getElementById(containerId);
+                if (container) {
+                    const entry = document.createElement('div');
+                    entry.className = `log-entry ${type}`;
+                    entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+                    container.appendChild(entry);
+                    container.scrollTop = container.scrollHeight;
+                }
+            }
+            
+            addComponent(name, component) {
+                this.components.set(name, component);
+            }
+            
+            initialize() {
+                // Инициализация DimensionInput
+                this.log('dimension-log', 'Создаем DimensionInput...');
+                const dimensionInput = DimensionInput.createForContainer('dimension-container');
+                this.addComponent('dimensions', dimensionInput);
+                this.log('dimension-log', '✅ DimensionInput создан', 'success');
+                
+                // Инициализация ZoomControl
+                this.log('zoom-log', 'Создаем ZoomControl...');
+                const zoomControl = ZoomControl.createForCanvas('test-canvas');
+                this.addComponent('zoom', zoomControl);
+                this.log('zoom-log', '✅ ZoomControl создан', 'success');
+                
+                // Настройка взаимодействия
+                this.setupInteractions();
+                this.bindUI();
+                
+                this.log('dimension-log', '🔗 Компоненты связаны через события', 'interaction');
+                this.log('zoom-log', '🔗 Компоненты связаны через события', 'interaction');
+            }
+            
+            setupInteractions() {
+                const dimensionInput = this.components.get('dimensions');
+                const zoomControl = this.components.get('zoom');
+                
+                // 🔗 КООРДИНАЦИЯ ЧЕРЕЗ СОБЫТИЯ (НЕ ПРЯМО!)
+                dimensionInput.on('dimensions-changed', (data) => {
+                    this.log('dimension-log',
+                        `📐 Размеры изменены: ${data.newDimensions.width}×${data.newDimensions.height}×${data.newDimensions.depth}`,
+                        'interaction'
+                    );
+                    
+                    this.log('zoom-log', '🔄 Уведомлен об изменении размеров', 'interaction');
+                });
+                
+                zoomControl.on('zoom-changed', (data) => {
+                    const zoomPercent = Math.round(data.newZoom * 100);
+                    document.getElementById('zoom-display').textContent = `${zoomPercent}%`;
+                    
+                    this.log('zoom-log',
+                        `🔍 Масштаб: ${Math.round(data.oldZoom * 100)}% → ${zoomPercent}%`,
+                        'success'
+                    );
+                });
+            }
+            
+            bindUI() {
+                const zoomControl = this.components.get('zoom');
+                
+                // Привязка кнопок zoom
+                document.getElementById('btn-zoom-in').addEventListener('click', () => {
+                    this.log('zoom-log', '🖱️ Клик Zoom In');
+                    zoomControl.zoomIn();
+                });
+                
+                document.getElementById('btn-zoom-out').addEventListener('click', () => {
+                    this.log('zoom-log', '🖱️ Клик Zoom Out');
+                    zoomControl.zoomOut();
+                });
+                
+                document.getElementById('btn-zoom-fit').addEventListener('click', () => {
+                    this.log('zoom-log', '🖱️ Клик Zoom Fit');
+                    zoomControl.setZoom(0.5); // Простой fit zoom для теста
+                });
+                
+                document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+                    this.log('zoom-log', '🖱️ Клик Zoom Reset');
+                    zoomControl.setZoom(1.0);
+                });
+            }
+        }
+        
+        // 🚀 ЗАПУСК СИСТЕМЫ
+        try {
+            const coordinator = new ComponentCoordinator();
+            coordinator.initialize();
+            
+            console.log('🎉 Микрокомпоненты успешно взаимодействуют!');
+            
+        } catch (error) {
+            console.error('❌ Ошибка инициализации:', error);
+        }
+    </script>
+</body>
+</html>

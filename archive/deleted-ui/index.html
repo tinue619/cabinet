@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 PRKI - Конструктор шкафов</title>
+    
+    <!-- 🎨 ИГРУШЕЧНЫЙ СТИЛЬ - как в v2.0 но улучшенный -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            /* 🎨 Apple-inspired palette как в v2.0 */
+            --primary: #007AFF;
+            --primary-hover: #0051D5;
+            --accent: #5856D6;
+            --success: #34C759;
+            --warning: #FF9500;
+            --danger: #FF3B30;
+            
+            /* Apple-style neutrals */
+            --background: #FFFFFF;
+            --surface: #F2F2F7;
+            --surface-secondary: #FFFFFF;
+            --text: #000000;
+            --text-light: #3C3C43;
+            --text-tertiary: #3C3C4399;
+            --separator: #3C3C4314;
+            
+            /* Refined shadows как в v2.0 */
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.08);
+            --radius: 12px;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+            background: var(--surface);
+            height: 100vh;
+            overflow: hidden;
+            color: var(--text);
+            font-size: 15px;
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        .app {
+            display: flex;
+            height: 100vh;
+            background: var(--background);
+        }
+        
+        /* 🎨 Левая панель - как в v2.0 */
+        .sidebar {
+            width: 340px;
+            background: var(--surface);
+            border-right: 1px solid var(--separator);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .logo {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 1px solid var(--separator);
+        }
+        
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+        
+        .logo p {
+            color: var(--text-light);
+            font-size: 13px;
+        }
+        
+        .controls {
+            padding: 20px;
+            flex: 1;
+        }
+        
+        .control-group {
+            margin-bottom: 24px;
+        }
+        
+        .control-group h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text);
+        }
+        
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .input-group label {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            padding: 12px;
+            border: 1px solid var(--separator);
+            border-radius: 8px;
+            font-size: 15px;
+            background: var(--background);
+            transition: all 0.2s;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.08);
+        }
+        
+        /* 🎨 КНОПКИ КАК В ИГРЕ */
+        .game-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 16px;
+        }
+        
+        .game-btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .game-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .game-btn.primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+        
+        .game-btn.success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .game-btn.warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .game-btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        /* 🎨 Основная область */
+        .main-area {
+            flex: 1;
+            position: relative;
+            background: var(--surface);
+        }
+        
+        .canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            background: var(--background);
+        }
+        
+        #canvas {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            cursor: grab;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        #canvas:active {
+            cursor: grabbing;
+        }
+        
+        /* 🎨 КОНТРОЛЛЫ КАК В ИГРЕ */
+        .game-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 8px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--separator);
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: var(--surface-secondary);
+            color: var(--text);
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .zoom-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.05);
+            box-shadow: var(--shadow);
+        }
+        
+        .zoom-info {
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-light);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* 🎨 Правая панель - СПИСОК ДЕТАЛЕЙ */
+        .details-panel {
+            width: 280px;
+            background: var(--surface);
+            border-left: 1px solid var(--separator);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .details-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--separator);
+        }
+        
+        .details-header h2 {
+            font-size: 17px;
+            font-weight: 600;
+        }
+        
+        .details-content {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .panel-item {
+            background: var(--surface-secondary);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--separator);
+        }
+        
+        .panel-item:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+        
+        .panel-item.selected {
+            border-color: var(--primary);
+            background: rgba(0, 122, 255, 0.08);
+        }
+        
+        .panel-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .panel-size {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+        
+        /* 🎨 Статистика */
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--surface-secondary);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            border: 1px solid var(--separator);
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 🎨 ПРОСТОЙ ИГРУШЕЧНЫЙ ИНТЕРФЕЙС -->
+    <div class="app">
+        <!-- 🎮 Левая панель: Параметры -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1>🎨 PRKI</h1>
+                <p>Конструктор шкафов</p>
+            </div>
+            
+            <div class="controls">
+                <!-- 📏 Размеры шкафа -->
+                <div class="control-group">
+                    <h3>📏 Размеры</h3>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Ширина</label>
+                            <input type="number" id="width" value="800" min="300" max="3000">
+                        </div>
+                        <div class="input-group">
+                            <label>Высота</label>
+                            <input type="number" id="height" value="2000" min="500" max="3000">
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Глубина</label>
+                            <input type="number" id="depth" value="600" min="200" max="1000">
+                        </div>
+                        <div class="input-group">
+                            <label>Цоколь</label>
+                            <input type="number" id="baseHeight" value="100" min="50" max="200">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 🎮 Игровые кнопки -->
+                <div class="control-group">
+                    <h3>🎮 Действия</h3>
+                    <div class="game-buttons">
+                        <button class="game-btn success" id="add-shelf">
+                            📚 Полка
+                        </button>
+                        <button class="game-btn primary" id="add-divider">
+                            📏 Разделитель
+                        </button>
+                        <button class="game-btn warning" id="add-rod">
+                            👕 Штанга
+                        </button>
+                        <button class="game-btn danger" id="clear-all">
+                            🗑️ Очистить
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🎨 Основная область -->
+        <div class="main-area">
+            <div class="canvas-container">
+                <canvas id="canvas" width="800" height="600"></canvas>
+                
+                <!-- 🎮 Контроллы как в игре -->
+                <div class="game-controls">
+                    <button class="zoom-btn" id="zoom-out" title="Отдалить">−</button>
+                    <div class="zoom-info"><span id="zoom-level">100%</span></div>
+                    <button class="zoom-btn" id="zoom-in" title="Приблизить">+</button>
+                    <button class="zoom-btn" id="zoom-fit" title="По размеру">⚡</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 📋 Правая панель: Список деталей -->
+        <div class="details-panel">
+            <div class="details-header">
+                <h2>📋 Детали</h2>
+            </div>
+            
+            <div class="details-content">
+                <!-- 📊 Статистика -->
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-value" id="panels-count">8</div>
+                        <div class="stat-label">Панелей</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="sections-count">1</div>
+                        <div class="stat-label">Секций</div>
+                    </div>
+                </div>
+                
+                <!-- 📋 Список панелей -->
+                <div id="panels-list">
+                    <!-- Будет заполнено JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚀 ПРОСТОЙ И БЫСТРЫЙ КОД -->
+    <script type="module">
+        // 🎮 ПРОСТОЙ ИГРОВОЙ КОНСТРУКТОР КАК В v2.0
+        
+        class SimpleGameCabinetDesigner {
+            constructor() {
+                this.cabinet = null;
+                this.lightCabinet = null;
+                this.selectedPanel = null;
+                
+                // 🎨 Canvas состояние (как в v2.0)
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scale = 1;
+                this.offsetX = 0;
+                this.offsetY = 0;
+                
+                this.init();
+            }
+            
+            async init() {
+                try {
+                    // 🔍 Отладка загрузки
+                    console.log('🚀 Начинаем загрузку ядра...');
+                    
+                    // 📦 Загружаем ядро
+                    const { Cabinet } = await import('./new_core/entities/Cabinet.js');
+                    const { LightweightCabinetAdapter } = await import('./new_core/adapters/LightweightCabinetAdapter.js');
+                    
+                    console.log('✅ Ядро загружено успешно!');
+                    console.log('✅ LightweightCabinetAdapter:', LightweightCabinetAdapter);
+                    
+                    this.Cabinet = Cabinet;
+                    this.LightweightAdapter = LightweightCabinetAdapter;
+                    
+                    // 🏠 Создаем шкаф
+                    await this.createCabinet();
+                    
+                    // 🎮 Настраиваем игру
+                    this.setupGameControls();
+                    
+                } catch (error) {
+                    console.error('Ошибка загрузки:', error);
+                }
+            }
+            
+            async createCabinet() {
+                const width = parseInt(document.getElementById('width').value);
+                const height = parseInt(document.getElementById('height').value);
+                const depth = parseInt(document.getElementById('depth').value);
+                const baseHeight = parseInt(document.getElementById('baseHeight').value);
+                
+                this.cabinet = new this.Cabinet({ width, height, depth, baseHeight });
+                this.cabinet.generate();
+                
+                // ⚡ Создаем легковесное представление
+                this.lightCabinet = this.LightweightAdapter.createLightweightRepresentation(this.cabinet);
+                
+                this.updateStats();
+                this.updatePanelsList();
+                this.fitToCanvas();
+            }
+            
+            setupGameControls() {
+                // 📏 Размеры
+                ['width', 'height', 'depth', 'baseHeight'].forEach(id => {
+                    document.getElementById(id).addEventListener('input', () => {
+                        this.createCabinet();
+                    });
+                });
+                
+                // 🔍 Зум (как в v2.0)
+                document.getElementById('zoom-in').addEventListener('click', () => {
+                    this.setZoom(this.scale * 1.2);
+                });
+                
+                document.getElementById('zoom-out').addEventListener('click', () => {
+                    this.setZoom(this.scale / 1.2);
+                });
+                
+                document.getElementById('zoom-fit').addEventListener('click', () => {
+                    this.fitToCanvas();
+                });
+                
+                // 🎮 Игровые кнопки
+                document.getElementById('add-shelf').addEventListener('click', () => {
+                    this.addShelf();
+                });
+                
+                document.getElementById('add-divider').addEventListener('click', () => {
+                    this.addDivider();
+                });
+                
+                document.getElementById('add-rod').addEventListener('click', () => {
+                    this.addRod();
+                });
+                
+                document.getElementById('clear-all').addEventListener('click', () => {
+                    this.clearAll();
+                });
+                
+                // 🖱️ Canvas события (как в v2.0)
+                this.setupCanvasEvents();
+            }
+            
+            setupCanvasEvents() {
+                let isDragging = false;
+                let lastPos = { x: 0, y: 0 };
+                
+                this.canvas.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    lastPos = this.getMousePos(e);
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (!isDragging) return;
+                    
+                    const pos = this.getMousePos(e);
+                    this.offsetX += pos.x - lastPos.x;
+                    this.offsetY += pos.y - lastPos.y;
+                    lastPos = pos;
+                    
+                    this.render();
+                });
+                
+                this.canvas.addEventListener('mouseup', () => {
+                    isDragging = false;
+                });
+                
+                this.canvas.addEventListener('click', (e) => {
+                    const panel = this.getPanelAtMouse(this.getMousePos(e));
+                    if (panel) {
+                        this.selectPanel(panel);
+                    }
+                });
+                
+                this.canvas.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+                    this.setZoom(this.scale * factor);
+                });
+            }
+            
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+            
+            setZoom(newScale) {
+                this.scale = Math.max(0.1, Math.min(5, newScale));
+                document.getElementById('zoom-level').textContent = Math.round(this.scale * 100) + '%';
+                this.render();
+            }
+            
+            fitToCanvas() {
+                if (!this.lightCabinet) return;
+                
+                const padding = 40;
+                const availableWidth = this.canvas.width - 2 * padding;
+                const availableHeight = this.canvas.height - 2 * padding;
+                
+                const cabinetWidth = this.lightCabinet.dimensions.width;
+                const cabinetHeight = this.lightCabinet.dimensions.height;
+                
+                this.scale = Math.min(
+                    availableWidth / cabinetWidth,
+                    availableHeight / cabinetHeight
+                );
+                
+                this.offsetX = 0;
+                this.offsetY = 0;
+                
+                this.setZoom(this.scale);
+            }
+            
+            render() {
+                if (!this.lightCabinet) return;
+                
+                // 🔥 Очищаем canvas только ЗДЕСЬ
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // 🎨 Расчет позиции (как в v2.0)
+                const cabinetWidth = this.lightCabinet.dimensions.width * this.scale;
+                const cabinetHeight = this.lightCabinet.dimensions.height * this.scale;
+                
+                const centerX = this.canvas.width / 2 + this.offsetX;
+                const centerY = this.canvas.height / 2 + this.offsetY;
+                
+                const startX = centerX - cabinetWidth / 2;
+                const startY = centerY - cabinetHeight / 2;
+                
+                // ⚡ Отрисовка только конструкции (без задних элементов)
+                this.LightweightAdapter.renderLightweight(this.ctx, this.lightCabinet, {
+                    scale: this.scale,
+                    offsetX: startX,
+                    offsetY: startY,
+                    onlyFrontBase: true  // 🎯 Скрываем задние элементы
+                });
+                
+                // 🎨 Подсветка выбранной панели
+                if (this.selectedPanel) {
+                    this.highlightPanel(this.selectedPanel, startX, startY);
+                }
+            }
+            
+            highlightPanel(panel, offsetX, offsetY) {
+                const pos = panel.position;
+                const size = panel.dimensions;
+                
+                const x = offsetX + pos.x * this.scale;
+                const y = offsetY + pos.y * this.scale;
+                const w = size.width * this.scale;
+                const h = size.height * this.scale;
+                
+                this.ctx.strokeStyle = '#007AFF';
+                this.ctx.lineWidth = 3;
+                this.ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
+                
+                this.ctx.fillStyle = 'rgba(0, 122, 255, 0.1)';
+                this.ctx.fillRect(x, y, w, h);
+            }
+            
+            getPanelAtMouse(mousePos) {
+                if (!this.lightCabinet) return null;
+                
+                const cabinetWidth = this.lightCabinet.dimensions.width * this.scale;
+                const cabinetHeight = this.lightCabinet.dimensions.height * this.scale;
+                
+                const centerX = this.canvas.width / 2 + this.offsetX;
+                const centerY = this.canvas.height / 2 + this.offsetY;
+                
+                const startX = centerX - cabinetWidth / 2;
+                const startY = centerY - cabinetHeight / 2;
+                
+                for (const panel of this.lightCabinet.panels) {
+                    const x = startX + panel.position.x * this.scale;
+                    const y = startY + panel.position.y * this.scale;
+                    const w = panel.dimensions.width * this.scale;
+                    const h = panel.dimensions.height * this.scale;
+                    
+                    if (mousePos.x >= x && mousePos.x <= x + w &&
+                        mousePos.y >= y && mousePos.y <= y + h) {
+                        return panel;
+                    }
+                }
+                
+                return null;
+            }
+            
+            selectPanel(panel) {
+                this.selectedPanel = panel;
+                
+                // Обновляем список
+                document.querySelectorAll('.panel-item').forEach(item => {
+                    item.classList.remove('selected');
+                    if (item.dataset.panelKey === panel.key) {
+                        item.classList.add('selected');
+                    }
+                });
+                
+                this.render();
+            }
+            
+            updateStats() {
+                if (!this.lightCabinet) return;
+                
+                document.getElementById('panels-count').textContent = this.lightCabinet.panels.length;
+                document.getElementById('sections-count').textContent = this.lightCabinet.sections.length;
+            }
+            
+            updatePanelsList() {
+                const container = document.getElementById('panels-list');
+                container.innerHTML = '';
+                
+                this.lightCabinet.panels.forEach(panel => {
+                    const item = document.createElement('div');
+                    item.className = 'panel-item';
+                    item.dataset.panelKey = panel.key;
+                    
+                    item.innerHTML = `
+                        <div class="panel-name">${panel.name}</div>
+                        <div class="panel-size">${panel.dimensions.width}×${panel.dimensions.height}×${panel.dimensions.depth} мм</div>
+                    `;
+                    
+                    item.addEventListener('click', () => {
+                        this.selectPanel(panel);
+                    });
+                    
+                    container.appendChild(item);
+                });
+            }
+            
+            // 🎮 Игровые методы (заглушки для будущего функционала)
+            addShelf() {
+                console.log('📚 Добавление полки - скоро!');
+            }
+            
+            addDivider() {
+                console.log('📏 Добавление разделителя - скоро!');
+            }
+            
+            addRod() {
+                console.log('👔 Добавление штанги - скоро!');
+            }
+            
+            clearAll() {
+                console.log('🗑️ Очистка - скоро!');
+                this.createCabinet(); // Пока просто пересоздаем базовый шкаф
+            }
+        }
+        
+        // 🚀 ЗАПУСК ПРОСТОЙ ИГРОВОЙ СИСТЕМЫ
+        new SimpleGameCabinetDesigner();
+        
+    </script>
+</body>
+</html>

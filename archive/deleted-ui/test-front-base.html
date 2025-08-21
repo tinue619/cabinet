@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Тест переднего цоколя</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { border-color: #28a745; background: #d4edda; }
+        .error { border-color: #dc3545; background: #f8d7da; }
+        .warning { border-color: #ffc107; background: #fff3cd; }
+        
+        canvas {
+            border: 1px solid #ccc;
+            background: white;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест переднего цоколя</h1>
+    
+    <div class="test-container">
+        <h2>📋 План теста:</h2>
+        <ul>
+            <li>1. Загрузить ядро Cabinet</li>
+            <li>2. Создать тестовый шкаф</li>
+            <li>3. Сгенерировать панели</li>
+            <li>4. Проверить координаты переднего цоколя</li>
+            <li>5. Отрисовать результат</li>
+        </ul>
+    </div>
+
+    <div class="test-container">
+        <h2>🔬 Результаты тестирования:</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>🎨 Визуализация (2D вид сверху):</h2>
+        <canvas id="canvas" width="600" height="400"></canvas>
+    </div>
+
+    <script type="module">
+        // 🏗️ UI LAYER - Тест переднего цоколя
+        // ТОЛЬКО отображение результатов, БЕЗ логики
+
+        let results = document.getElementById('results');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        async function runTest() {
+            try {
+                log('🚀 Начинаем тест переднего цоколя...', 'info');
+
+                // Импортируем ядро
+                log('📦 Загружаем Cabinet и CABINET_DNA...', 'info');
+                
+                const { Cabinet } = await import('./new_core/entities/Cabinet.js');
+                const { CABINET_DNA } = await import('./new_core/cabinet-dna.js');
+                
+                log('✅ Ядро загружено успешно', 'success');
+
+                // Создаем тестовый шкаф
+                log('🏗️ Создаем тестовый шкаф 800×2000×600...', 'info');
+                
+                const cabinet = new Cabinet({
+                    width: 800,
+                    height: 2000,
+                    depth: 600,
+                    baseHeight: 100
+                });
+
+                log(`✅ Шкаф создан: ${cabinet.dimensions.width}×${cabinet.dimensions.height}×${cabinet.dimensions.depth}`, 'success');
+                log(`📏 Высота цоколя: ${cabinet.dimensions.baseHeight}мм`, 'info');
+
+                // Генерируем панели
+                log('⚙️ Генерируем панели...', 'info');
+                cabinet.generate();
+                
+                const stats = cabinet.getStats();
+                log(`✅ Генерация завершена: ${stats.panelsCount} панелей, ${stats.sectionsCount} секций`, 'success');
+
+                // Проверяем передний цоколь
+                log('🔍 Анализируем передний цоколь...', 'info');
+                
+                const frontBase = cabinet.getPanel('FRONT_BASE');
+                if (!frontBase) {
+                    log('❌ Передний цоколь не найден!', 'error');
+                    return;
+                }
+
+                log(`✅ Передний цоколь найден: ${frontBase.name}`, 'success');
+
+                // Проверяем все формулы
+                log('📐 Проверяем формулы позиционирования и размеров...', 'info');
+                
+                const dims = cabinet.dimensions;
+                const t = cabinet.materialThickness;
+                const b = dims.baseHeight;
+                
+                log(`📊 Параметры: x=${dims.width}, y=${dims.height}, z=${dims.depth}, t=${t}, b=${b}`, 'info');
+                
+                // Ожидаемые значения по новым формулам
+                const expectedPosition = CABINET_DNA.GENERATION.POSITION_FORMULAS.FRONT_BASE(
+                    dims.width, dims.height, dims.depth, t, b
+                );
+                
+                const expectedSize = CABINET_DNA.GENERATION.SIZE_FORMULAS.FRONT_BASE(
+                    dims.width, dims.height, dims.depth, t, b
+                );
+                
+                const actualPosition = frontBase.position;
+                const actualSize = frontBase.dimensions;
+                
+                log(`📍 ПОЗИЦИЯ:`, 'info');
+                log(`  Ожидаемая: x=${expectedPosition.x}, y=${expectedPosition.y}, z=${expectedPosition.z}`, 'info');
+                log(`  Фактическая: x=${actualPosition.x}, y=${actualPosition.y}, z=${actualPosition.z}`, 'info');
+                
+                log(`📏 РАЗМЕРЫ:`, 'info');
+                log(`  Ожидаемые: width=${expectedSize.width}, height=${expectedSize.height}, depth=${expectedSize.depth}`, 'info');
+                log(`  Фактические: width=${actualSize.width}, height=${actualSize.height}, depth=${actualSize.depth}`, 'info');
+
+                // Проверяем, что цоколь внизу
+                const isAtBottom = expectedPosition.y === (dims.height - b);
+                if (isAtBottom) {
+                    log('✅ ПОЗИЦИЯ: Цоколь правильно расположен ВНИЗУ!', 'success');
+                } else {
+                    log(`❌ ПОЗИЦИЯ: Цоколь расположен неправильно! Ожидалось y=${dims.height - b}`, 'error');
+                }
+                
+                // Проверяем размеры
+                const correctWidth = expectedSize.width === (dims.width - 2*t);
+                const correctHeight = expectedSize.height === b;
+                const correctDepth = expectedSize.depth === t;
+                
+                if (correctWidth && correctHeight && correctDepth) {
+                    log('✅ РАЗМЕРЫ: Все размеры переднего цоколя корректны!', 'success');
+                } else {
+                    log('❌ РАЗМЕРЫ: Найдены ошибки в размерах:', 'error');
+                    if (!correctWidth) log(`  Неверная ширина: ожидалось ${dims.width - 2*t}, получено ${expectedSize.width}`, 'error');
+                    if (!correctHeight) log(`  Неверная высота: ожидалось ${b}, получено ${expectedSize.height}`, 'error');
+                    if (!correctDepth) log(`  Неверная глубина: ожидалось ${t}, получено ${expectedSize.depth}`, 'error');
+                }
+
+                // Получаем все панели для отрисовки
+                const panels = cabinet.getPanels();
+                log(`🎨 Отрисовываем ${panels.length} панелей в 2D...`, 'info');
+
+                // Рисуем 2D вид сверху
+                drawCabinet(panels, cabinet.dimensions);
+                
+                // Показываем координаты всех панелей
+                log('📋 Координаты всех панелей:', 'info');
+                panels.forEach(panel => {
+                    const pos = panel.position;
+                    const size = panel.dimensions;
+                    log(`  ${panel.key}: pos(${pos.x}, ${pos.y}, ${pos.z}) size(${size.width}×${size.height}×${size.depth})`, 'info');
+                });
+                
+                log('🎉 Тест завершен успешно!', 'success');
+
+            } catch (error) {
+                log(`💥 Ошибка теста: ${error.message}`, 'error');
+                console.error('Test error:', error);
+            }
+        }
+
+        function drawCabinet(panels, dimensions) {
+            // Очищаем canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Масштаб для отображения
+            const scale = Math.min(
+                (canvas.width - 150) / dimensions.width,
+                (canvas.height - 150) / dimensions.height
+            );
+            
+            const offsetX = (canvas.width - dimensions.width * scale) / 2;
+            const offsetY = (canvas.height - dimensions.height * scale) / 2;
+
+            // Цвета для разных типов панелей
+            const colors = {
+                'FRONT_BASE': '#ff4757',    // Ярко-красный для переднего цоколя
+                'BACK_BASE': '#2ed573',     // Зеленый для заднего цоколя
+                'LEFT_SIDE': '#3742fa',     // Синий для боковин
+                'RIGHT_SIDE': '#3742fa',
+                'TOP': '#ffa502',           // Оранжевый для верха
+                'BOTTOM': '#ff6348',        // Красно-оранжевый для низа
+                'BACK_WALL': '#f1c40f',     // Желтый для задней стенки
+                'FACADE': '#9c88ff'         // Фиолетовый для фасада
+            };
+
+            // Рисуем общий контур шкафа
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(offsetX, offsetY, dimensions.width * scale, dimensions.height * scale);
+
+            // Рисуем панели
+            panels.forEach(panel => {
+                const pos = panel.position;
+                const size = panel.dimensions;
+                
+                // Координаты на canvas (2D вид сверху, используем X и Y)
+                const x = offsetX + pos.x * scale;
+                const y = offsetY + pos.y * scale;
+                const w = size.width * scale;
+                const h = size.height * scale;
+
+                // Заливка
+                ctx.fillStyle = colors[panel.key] || '#ecf0f1';
+                ctx.fillRect(x, y, w, h);
+
+                // Обводка
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Подпись
+                ctx.fillStyle = '#2c3e50';
+                ctx.font = '11px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const text = panel.key === 'FRONT_BASE' ? 'ЦОКОЛЬ ПЕРЕДНИЙ' : 
+                           panel.key === 'BACK_BASE' ? 'ЦОКОЛЬ ЗАДНИЙ' :
+                           panel.name;
+                           
+                // Рисуем текст с обводкой для лучшей читаемости
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 3;
+                ctx.strokeText(text, x + w/2, y + h/2);
+                ctx.fillText(text, x + w/2, y + h/2);
+                
+                // Показываем размеры для переднего цоколя
+                if (panel.key === 'FRONT_BASE') {
+                    ctx.fillStyle = '#ff4757';
+                    ctx.font = '10px Arial';
+                    ctx.fillText(`${size.width}×${size.height}×${size.depth}`, x + w/2, y + h/2 + 15);
+                }
+            });
+
+            // Рисуем размеры шкафа
+            ctx.strokeStyle = '#7f8c8d';
+            ctx.font = '14px Arial';
+            ctx.fillStyle = '#2c3e50';
+            
+            // Ширина
+            const topY = offsetY - 30;
+            ctx.fillText(`${dimensions.width}мм`, offsetX + (dimensions.width * scale) / 2, topY);
+            
+            // Высота
+            const leftX = offsetX - 50;
+            ctx.save();
+            ctx.translate(leftX, offsetY + (dimensions.height * scale) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`${dimensions.height}мм`, 0, 0);
+            ctx.restore();
+            
+            // Высота цоколя
+            ctx.fillStyle = '#ff4757';
+            ctx.font = '12px Arial';
+            ctx.fillText(`Цоколь: ${dimensions.baseHeight}мм`, offsetX + 10, offsetY + dimensions.height * scale - 10);
+        }
+
+        // Запускаем тест
+        runTest();
+
+    </script>
+</body>
+</html>
+                    height: 2000,
+                    depth: 600,
+                    baseHeight: 100
+                });
+
+                log(`✅ Шкаф создан: ${cabinet.dimensions.width}×${cabinet.dimensions.height}×${cabinet.dimensions.depth}`, 'success');
+
+                // Генерируем панели
+                log('⚙️ Генерируем панели...', 'info');
+                cabinet.generate();
+                
+                const stats = cabinet.getStats();
+                log(`✅ Генерация завершена: ${stats.panelsCount} панелей, ${stats.sectionsCount} секций`, 'success');
+
+                // Проверяем передний цоколь
+                log('🔍 Проверяем передний цоколь...', 'info');
+                
+                const frontBase = cabinet.getPanel('FRONT_BASE');
+                if (!frontBase) {
+                    log('❌ Передний цоколь не найден!', 'error');
+                    return;
+                }
+
+                log(`✅ Передний цоколь найден: ${frontBase.name}`, 'success');
+
+                // Проверяем формулу позиционирования
+                log('📐 Проверяем формулу позиционирования...', 'info');
+                
+                const dims = cabinet.dimensions;
+                const t = cabinet.materialThickness;
+                const b = dims.baseHeight;
+                
+                const expectedPosition = CABINET_DNA.GENERATION.POSITION_FORMULAS.FRONT_BASE(
+                    dims.width, dims.height, dims.depth, t, b
+                );
+                
+                const actualPosition = frontBase.position;
+                
+                log(`📊 Ожидаемая позиция: x=${expectedPosition.x}, y=${expectedPosition.y}, z=${expectedPosition.z}`, 'info');
+                log(`📊 Фактическая позиция: x=${actualPosition.x}, y=${actualPosition.y}, z=${actualPosition.z}`, 'info');
+
+                // Проверяем, что цоколь внизу
+                if (expectedPosition.y === dims.height - b) {
+                    log('✅ Цоколь правильно расположен ВНИЗУ!', 'success');
+                } else {
+                    log(`❌ Цоколь расположен неправильно! Ожидалось y=${dims.height - b}`, 'error');
+                }
+
+                // Получаем все панели для отрисовки
+                const panels = cabinet.getPanels();
+                log(`🎨 Отрисовываем ${panels.length} панелей...`, 'info');
+
+                // Рисуем 2D вид сверху
+                drawCabinet(panels, cabinet.dimensions);
+                
+                log('🎉 Тест завершен успешно!', 'success');
+
+            } catch (error) {
+                log(`💥 Ошибка теста: ${error.message}`, 'error');
+                console.error('Test error:', error);
+            }
+        }
+
+        function drawCabinet(panels, dimensions) {
+            // Очищаем canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Масштаб для отображения
+            const scale = Math.min(
+                (canvas.width - 100) / dimensions.width,
+                (canvas.height - 100) / dimensions.height
+            );
+            
+            const offsetX = (canvas.width - dimensions.width * scale) / 2;
+            const offsetY = (canvas.height - dimensions.height * scale) / 2;
+
+            // Цвета для разных типов панелей
+            const colors = {
+                'FRONT_BASE': '#ff6b6b',    // Красный для переднего цоколя
+                'BACK_BASE': '#4ecdc4',     // Бирюзовый для заднего цоколя
+                'LEFT_SIDE': '#45b7d1',     // Синий для боковин
+                'RIGHT_SIDE': '#45b7d1',
+                'TOP': '#96ceb4',           // Зеленый для верха/низа
+                'BOTTOM': '#96ceb4',
+                'BACK_WALL': '#ffeaa7',     // Желтый для задней стенки
+                'FACADE': '#dda0dd'         // Фиолетовый для фасада
+            };
+
+            // Рисуем панели
+            panels.forEach(panel => {
+                const pos = panel.position;
+                const size = panel.dimensions;
+                
+                // Координаты на canvas (2D вид сверху, используем X и Y)
+                const x = offsetX + pos.x * scale;
+                const y = offsetY + pos.y * scale;
+                const w = size.width * scale;
+                const h = size.height * scale;
+
+                // Заливка
+                ctx.fillStyle = colors[panel.key] || '#e0e0e0';
+                ctx.fillRect(x, y, w, h);
+
+                // Обводка
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Подпись
+                ctx.fillStyle = '#333';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const text = panel.key === 'FRONT_BASE' ? 'ЦОКОЛЬ П' : panel.name;
+                ctx.fillText(text, x + w/2, y + h/2);
+            });
+
+            // Рисуем размеры шкафа
+            ctx.strokeStyle = '#666';
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#666';
+            
+            // Ширина
+            const topY = offsetY - 20;
+            ctx.fillText(`${dimensions.width}мм`, offsetX + (dimensions.width * scale) / 2, topY);
+            
+            // Высота
+            const leftX = offsetX - 30;
+            ctx.save();
+            ctx.translate(leftX, offsetY + (dimensions.height * scale) / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`${dimensions.height}мм`, 0, 0);
+            ctx.restore();
+        }
+
+        // Запускаем тест
+        runTest();
+
+    </script>
+</body>
+</html>

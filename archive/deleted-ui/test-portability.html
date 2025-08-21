@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cabinet Portability</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .test {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+        }
+        .pass { border-left: 4px solid green; }
+        .fail { border-left: 4px solid red; }
+        .pending { border-left: 4px solid orange; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Тест переносимости проекта</h1>
+    
+    <div id="tests"></div>
+    
+    <script type="module">
+        const tests = document.getElementById('tests');
+        
+        function addTest(name, status, message) {
+            const div = document.createElement('div');
+            div.className = `test ${status}`;
+            div.innerHTML = `
+                <strong>${status === 'pass' ? '✅' : status === 'fail' ? '❌' : '⏳'} ${name}</strong>
+                <div>${message}</div>
+            `;
+            tests.appendChild(div);
+        }
+        
+        // Тест 1: Проверка наличия ядра
+        addTest('Проверка ядра', 'pending', 'Проверяем доступность new_core...');
+        
+        try {
+            const { SystemFactory } = await import('./new_core/index.js');
+            addTest('Ядро new_core', 'pass', 'Ядро успешно загружено');
+            
+            // Тест 2: Создание системы
+            try {
+                const system = SystemFactory.create();
+                addTest('Создание системы', 'pass', 'Система создана');
+                
+                // Тест 3: Создание шкафа
+                try {
+                    const cabinet = system.createCabinet({
+                        width: 800,
+                        height: 2000,
+                        depth: 600,
+                        baseHeight: 100
+                    });
+                    cabinet.generate();
+                    const stats = cabinet.getStats();
+                    addTest('Создание шкафа', 'pass', `Шкаф создан: ${stats.panelsCount} панелей`);
+                } catch (e) {
+                    addTest('Создание шкафа', 'fail', e.message);
+                }
+                
+            } catch (e) {
+                addTest('Создание системы', 'fail', e.message);
+            }
+            
+        } catch (e) {
+            addTest('Ядро new_core', 'fail', 'Не найдено. Проверьте путь: ./new_core/index.js');
+        }
+        
+        // Тест 4: Проверка приложения
+        addTest('Проверка cabinet-app', 'pending', 'Проверяем доступность приложения...');
+        
+        try {
+            const response = await fetch('./cabinet-app/index.html');
+            if (response.ok) {
+                addTest('Приложение cabinet-app', 'pass', 'index.html найден');
+            } else {
+                addTest('Приложение cabinet-app', 'fail', 'index.html не найден');
+            }
+        } catch (e) {
+            addTest('Приложение cabinet-app', 'fail', 'Папка не найдена');
+        }
+        
+        // Тест 5: Проверка конфигурации
+        try {
+            const { CORE_PATH } = await import('./cabinet-app/src/config.js');
+            addTest('Конфигурация', 'pass', `Путь к ядру: ${CORE_PATH}`);
+            
+            // Проверяем, правильный ли путь
+            if (CORE_PATH === '../../new_core/index.js') {
+                addTest('Путь к ядру', 'pass', 'Путь настроен для стандартной структуры');
+            } else {
+                addTest('Путь к ядру', 'pending', 'Путь изменен - убедитесь, что он правильный');
+            }
+        } catch (e) {
+            addTest('Конфигурация', 'fail', 'Не удалось загрузить config.js');
+        }
+        
+        // Итоговая проверка
+        setTimeout(() => {
+            const allTests = document.querySelectorAll('.test');
+            const passed = document.querySelectorAll('.test.pass').length;
+            const failed = document.querySelectorAll('.test.fail').length;
+            
+            const summary = document.createElement('div');
+            summary.className = 'test ' + (failed === 0 ? 'pass' : 'fail');
+            summary.innerHTML = `
+                <h2>${failed === 0 ? '✅ Все тесты пройдены!' : '❌ Есть проблемы'}</h2>
+                <div>Пройдено: ${passed}, Провалено: ${failed}</div>
+                ${failed === 0 ? 
+                    '<div><strong>Проект готов к переносу!</strong></div>' : 
+                    '<div><strong>Исправьте ошибки перед переносом</strong></div>'
+                }
+            `;
+            tests.appendChild(summary);
+        }, 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Тест устранения перехлестов панелей</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            color: #333;
+        }
+        
+        .header {
+            text-align: center;
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            color: #2c3e50;
+            font-size: 2.5em;
+        }
+        
+        .fix-info {
+            background: #e8f5e8;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .fix-info h3 {
+            margin: 0 0 15px 0;
+            color: #2e7d32;
+        }
+        
+        .overlap-analysis {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .before {
+            background: #ffebee;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            font-family: monospace;
+        }
+        
+        .after {
+            background: #e8f5e8;
+            border-left: 4px solid #4caf50;
+            padding: 15px;
+            font-family: monospace;
+        }
+        
+        .results-container {
+            background: rgba(255,255,255,0.95);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+        
+        .success { border-color: #28a745; background: #d4edda; color: #155724; }
+        .error { border-color: #dc3545; background: #f8d7da; color: #721c24; }
+        .info { border-color: #17a2b8; background: #d1ecf1; color: #0c5460; }
+        .warning { border-color: #ffc107; background: #fff3cd; color: #856404; }
+        
+        canvas {
+            border: 2px solid #bdc3c7;
+            background: #ffffff;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 800px;
+            display: block;
+            margin: 20px auto;
+        }
+        
+        .canvas-container {
+            text-align: center;
+        }
+        
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 15px 0;
+            font-size: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            border: 1px solid #333;
+        }
+        
+        @media (max-width: 768px) {
+            .overlap-analysis {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 УСТРАНЕНИЕ ПЕРЕХЛЕСТОВ</h1>
+        <p>Тест исправления позиционирования TOP панели</p>
+    </div>
+
+    <div class="fix-info">
+        <h3>🎯 Исправленная проблема перехлеста:</h3>
+        
+        <div class="overlap-analysis">
+            <div class="before">
+                <strong>❌ ДО (перехлест):</strong><br>
+                LEFT_SIDE: x=0, width=16<br>
+                TOP: x=0, width=800<br>
+                <br>
+                Занимают область:<br>
+                LEFT_SIDE: [0...16]<br>
+                TOP: [0...800] ❌ ПЕРЕХЛЕСТ!<br>
+                <br>
+                Конфликт в зоне [0...16]
+            </div>
+            
+            <div class="after">
+                <strong>✅ ПОСЛЕ (без перехлеста):</strong><br>
+                LEFT_SIDE: x=0, width=16<br>
+                TOP: x=16, width=768<br>
+                <br>
+                Занимают область:<br>
+                LEFT_SIDE: [0...16]<br>
+                TOP: [16...784] ✅ БЕЗ ПЕРЕХЛЕСТА!<br>
+                <br>
+                Крыша точно между боковинами
+            </div>
+        </div>
+    </div>
+
+    <div class="results-container">
+        <h2>🔬 Результаты анализа перехлестов:</h2>
+        <div id="results"></div>
+    </div>
+
+    <div class="canvas-container">
+        <h2>🎨 Визуализация панелей (без перехлестов):</h2>
+        <canvas id="canvas" width="800" height="600"></canvas>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498db;"></div>
+                <span>LEFT_SIDE</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #9b59b6;"></div>
+                <span>RIGHT_SIDE</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>TOP (крыша)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span>BOTTOM</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2ecc71;"></div>
+                <span>FRONT_BASE</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // 🏗️ UI LAYER - Тест устранения перехлестов
+        // ТОЛЬКО отображение результатов, БЕЗ логики
+
+        let results = document.getElementById('results');
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.textContent = message;
+            results.appendChild(div);
+            console.log(message);
+        }
+
+        async function runOverlapTest() {
+            try {
+                log('🚀 Начинаем анализ перехлестов панелей...', 'info');
+
+                // Импортируем ядро
+                const { Cabinet } = await import('./new_core/entities/Cabinet.js');
+                const { CABINET_DNA } = await import('./new_core/cabinet-dna.js');
+                
+                log(`✅ Ядро загружено, версия ДНК: ${CABINET_DNA.SIGNATURE.version}`, 'success');
+                log(`🔧 Позиционирование: ${CABINET_DNA.SIGNATURE.panels || 'не указано'}`, 'info');
+
+                // Создаем тестовый шкаф
+                const cabinet = new Cabinet({
+                    width: 800,
+                    height: 2000,
+                    depth: 600,
+                    baseHeight: 100
+                });
+
+                log(`🏗️ Шкаф создан: ${cabinet.dimensions.width}×${cabinet.dimensions.height}×${cabinet.dimensions.depth}`, 'success');
+
+                // Генерируем панели
+                cabinet.generate();
+                const stats = cabinet.getStats();
+                log(`⚙️ Генерация завершена: ${stats.panelsCount} панелей`, 'success');
+
+                // Анализируем перехлесты панелей
+                log('🔍 Анализ перехлестов панелей по X-координате:', 'info');
+                
+                const panels = cabinet.getPanels();
+                const criticalPanels = ['LEFT_SIDE', 'RIGHT_SIDE', 'TOP', 'BOTTOM'];
+                let hasOverlaps = false;
+                
+                // Создаем карту занятых областей по X
+                const occupiedRegions = [];
+                
+                criticalPanels.forEach(panelKey => {
+                    const panel = cabinet.getPanel(panelKey);
+                    if (!panel) return;
+                    
+                    const pos = panel.position;
+                    const size = panel.dimensions;
+                    const startX = pos.x;
+                    const endX = pos.x + size.width;
+                    
+                    log(`📐 ${panelKey}: x=${startX}...${endX} (width=${size.width})`, 'info');
+                    
+                    // Проверяем перехлесты с уже существующими областями
+                    for (const region of occupiedRegions) {
+                        const overlapStart = Math.max(startX, region.startX);
+                        const overlapEnd = Math.min(endX, region.endX);
+                        
+                        if (overlapStart < overlapEnd) {
+                            log(`❌ ПЕРЕХЛЕСТ: ${panelKey} и ${region.panelKey} в области [${overlapStart}...${overlapEnd}]`, 'error');
+                            hasOverlaps = true;
+                        }
+                    }
+                    
+                    occupiedRegions.push({
+                        panelKey,
+                        startX,
+                        endX
+                    });
+                });
+                
+                if (!hasOverlaps) {
+                    log('✅ ПЕРЕХЛЕСТОВ НЕ ОБНАРУЖЕНО! Все панели корректно позиционированы', 'success');
+                } else {
+                    log('⚠️ Обнаружены перехлесты панелей', 'warning');
+                }
+                
+                // Проверяем правильность позиционирования TOP панели
+                log('🎯 Специальная проверка TOP панели:', 'info');
+                
+                const leftSide = cabinet.getPanel('LEFT_SIDE');
+                const rightSide = cabinet.getPanel('RIGHT_SIDE');
+                const topPanel = cabinet.getPanel('TOP');
+                
+                if (leftSide && rightSide && topPanel) {
+                    const expectedTopX = leftSide.dimensions.width; // 16
+                    const expectedTopWidth = cabinet.dimensions.width - 2 * cabinet.materialThickness; // 768
+                    const expectedTopEnd = expectedTopX + expectedTopWidth; // 784
+                    const rightSideX = rightSide.position.x; // 784
+                    
+                    log(`  Ожидаемая позиция TOP: x=${expectedTopX}`, 'info');
+                    log(`  Фактическая позиция TOP: x=${topPanel.position.x}`, 'info');
+                    log(`  Ожидаемая ширина TOP: ${expectedTopWidth}мм`, 'info');
+                    log(`  Фактическая ширина TOP: ${topPanel.dimensions.width}мм`, 'info');
+                    
+                    const positionCorrect = topPanel.position.x === expectedTopX;
+                    const widthCorrect = topPanel.dimensions.width === expectedTopWidth;
+                    const fitsCorrectly = (topPanel.position.x + topPanel.dimensions.width) === rightSideX;
+                    
+                    if (positionCorrect && widthCorrect && fitsCorrectly) {
+                        log('✅ TOP панель идеально помещается между боковинами!', 'success');
+                    } else {
+                        if (!positionCorrect) log(`❌ Неверная позиция TOP: ожидалось x=${expectedTopX}`, 'error');
+                        if (!widthCorrect) log(`❌ Неверная ширина TOP: ожидалось ${expectedTopWidth}мм`, 'error');
+                        if (!fitsCorrectly) log(`❌ TOP выходит за правую боковину`, 'error');
+                    }
+                }
+
+                // Рисуем визуализацию
+                log('🎨 Отрисовываем панели для проверки перехлестов...', 'info');
+                drawPanelsOverlapAnalysis(panels, cabinet.dimensions);
+                
+                log('🏁 Анализ перехлестов завершен!', 'success');
+
+            } catch (error) {
+                log(`💥 Ошибка анализа: ${error.message}`, 'error');
+                console.error('Overlap test error:', error);
+            }
+        }
+
+        function drawPanelsOverlapAnalysis(panels, dimensions) {
+            // Очищаем canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Масштаб для отображения
+            const scale = Math.min(
+                (canvas.width - 100) / dimensions.width,
+                (canvas.height - 100) / dimensions.height
+            );
+            
+            const offsetX = (canvas.width - dimensions.width * scale) / 2;
+            const offsetY = (canvas.height - dimensions.height * scale) / 2;
+
+            // Цвета для панелей
+            const colors = {
+                'LEFT_SIDE': '#3498db',      // Синий
+                'RIGHT_SIDE': '#9b59b6',     // Фиолетовый
+                'TOP': '#e74c3c',            // Красный для крыши
+                'BOTTOM': '#f39c12',         // Оранжевый
+                'FRONT_BASE': '#2ecc71',     // Зеленый
+                'BACK_BASE': '#34495e',      // Темно-серый
+                'BACK_WALL': '#f1c40f',      // Желтый
+                'FACADE': '#95a5a6'          // Светло-серый
+            };
+
+            // Рисуем контур шкафа
+            ctx.strokeStyle = '#2c3e50';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(offsetX, offsetY, dimensions.width * scale, dimensions.height * scale);
+
+            // Рисуем панели с анализом перехлестов
+            panels.forEach(panel => {
+                const pos = panel.position;
+                const size = panel.dimensions;
+                
+                const x = offsetX + pos.x * scale;
+                const y = offsetY + pos.y * scale;
+                const w = size.width * scale;
+                const h = size.height * scale;
+
+                // Заливка
+                ctx.fillStyle = colors[panel.key] || '#bdc3c7';
+                ctx.fillRect(x, y, w, h);
+
+                // Обводка
+                ctx.strokeStyle = '#2c3e50';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, w, h);
+
+                // Подпись с координатами
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                const text = `${panel.key}\nx=${pos.x}, w=${size.width}`;
+                const lines = text.split('\n');
+                lines.forEach((line, i) => {
+                    // Контур для лучшей читаемости
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(line, x + w/2, y + h/2 - 6 + i * 12);
+                    ctx.fillText(line, x + w/2, y + h/2 - 6 + i * 12);
+                });
+            });
+
+            // Добавляем размерные линии для анализа
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 2;
+            ctx.font = '12px Arial';
+            ctx.fillStyle = '#e74c3c';
+            
+            // Показываем ключевые размеры
+            const topY = offsetY - 30;
+            ctx.fillText(`Общая ширина: ${dimensions.width}мм`, offsetX + (dimensions.width * scale) / 2, topY);
+            
+            // Показываем толщину материала
+            const leftX = offsetX - 80;
+            ctx.fillText(`Толщина: ${16}мм`, leftX, offsetY + 20);
+        }
+
+        // Запускаем тест
+        runOverlapTest();
+
+    </script>
+</body>
+</html>

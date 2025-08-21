@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabinet Designer - Clean Architecture</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-brand">
+                <svg class="logo" width="32" height="32" viewBox="0 0 32 32">
+                    <rect x="4" y="4" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"/>
+                    <line x1="4" y1="12" x2="28" y2="12" stroke="currentColor" stroke-width="2"/>
+                    <line x1="16" y1="12" x2="16" y2="28" stroke="currentColor" stroke-width="2"/>
+                </svg>
+                <h1>Cabinet Designer</h1>
+                <span class="version">v3.0</span>
+            </div>
+            
+            <div class="header-actions">
+                <button id="btn-undo" class="btn-icon" title="Отменить (Ctrl+Z)" disabled>
+                    <svg width="20" height="20"><path d="M7 5L3 9l4 4M3 9h10a4 4 0 110 8" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+                </button>
+                <button id="btn-redo" class="btn-icon" title="Повторить (Ctrl+Y)" disabled>
+                    <svg width="20" height="20"><path d="M13 5l4 4-4 4M17 9H7a4 4 0 100 8" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+                </button>
+                <div class="separator"></div>
+                <button id="btn-export" class="btn-icon" title="Экспорт">
+                    <svg width="20" height="20"><path d="M10 14V3M10 3L6 7M10 3l4 4M3 14v3h14v-3" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="layout">
+            <!-- Left Panel -->
+            <aside class="panel panel-left">
+                <div class="panel-header">
+                    <h2>Параметры</h2>
+                </div>
+                
+                <div class="panel-content">
+                    <section class="section">
+                        <h3>Габариты</h3>
+                        <div class="form-group">
+                            <label for="cabinet-width">Ширина (мм)</label>
+                            <input type="number" id="cabinet-width" value="800" min="400" max="2000" step="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="cabinet-height">Высота (мм)</label>
+                            <input type="number" id="cabinet-height" value="2000" min="600" max="3000" step="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="cabinet-depth">Глубина (мм)</label>
+                            <input type="number" id="cabinet-depth" value="600" min="300" max="800" step="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="cabinet-base">Цоколь (мм)</label>
+                            <input type="number" id="cabinet-base" value="100" min="60" max="200" step="5">
+                        </div>
+                        <button id="btn-apply" class="btn btn-primary">Применить</button>
+                    </section>
+                    
+                    <section class="section">
+                        <h3>Режим</h3>
+                        <div class="mode-toggle">
+                            <button id="btn-mode-2d" class="mode-btn active">2D</button>
+                            <button id="btn-mode-3d" class="mode-btn">3D</button>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+
+            <!-- Canvas Area -->
+            <main class="canvas-container">
+                <div class="canvas-toolbar">
+                    <button id="btn-zoom-in" class="toolbar-btn" title="Приблизить">+</button>
+                    <button id="btn-zoom-out" class="toolbar-btn" title="Отдалить">−</button>
+                    <button id="btn-zoom-fit" class="toolbar-btn" title="По размеру">⊡</button>
+                </div>
+                <canvas id="cabinet-canvas"></canvas>
+            </main>
+
+            <!-- Right Panel -->
+            <aside class="panel panel-right">
+                <div class="panel-header">
+                    <h2>Информация</h2>
+                </div>
+                
+                <div class="panel-content">
+                    <section class="stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Объем:</span>
+                            <span id="stat-volume" class="stat-value">0 м³</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Панелей:</span>
+                            <span id="stat-panels" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Секций:</span>
+                            <span id="stat-sections" class="stat-value">0</span>
+                        </div>
+                    </section>
+                    
+                    <section class="section">
+                        <h3>Детали</h3>
+                        <div id="parts-list" class="parts-list">
+                            <div class="empty-state">Нет деталей</div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Notifications Container -->
+    <div id="notifications" class="notifications-container"></div>
+
+    <!-- Load Application -->
+    <script type="module" src="src/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест современного интерфейса</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        button {
+            padding: 10px 20px;
+            background: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        button:hover {
+            background: #0051D5;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f0f9ff;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Тест современного интерфейса Cabinet Designer</h1>
+        
+        <div>
+            <button onclick="testCabinetClass()">Тест класса Cabinet</button>
+            <button onclick="testPanelsGeneration()">Тест генерации панелей</button>
+            <button onclick="testCalculations()">Тест расчетов</button>
+            <button onclick="openModernUI()">Открыть современный интерфейс</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <!-- Подключаем те же скрипты, что и в современном интерфейсе -->
+    <script src="../../reference-prototype/js/config.js"></script>
+    <script src="../../reference-prototype/js/cabinet.js"></script>
+
+    <script>
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function testCabinetClass() {
+            log('=== Тест класса Cabinet ===', 'info');
+            
+            try {
+                if (typeof Cabinet === 'undefined') {
+                    throw new Error('Класс Cabinet не найден');
+                }
+                
+                if (typeof CONFIG === 'undefined') {
+                    throw new Error('CONFIG не найден');
+                }
+                
+                log('✅ Cabinet и CONFIG загружены', 'success');
+                
+                const cabinet = new Cabinet(800, 1800, 500, 100);
+                log(`✅ Шкаф создан: ${cabinet.width}×${cabinet.height}×${cabinet.depth}мм`, 'success');
+                
+                // Проверяем методы
+                if (typeof cabinet.getAllParts === 'function') {
+                    log('✅ Метод getAllParts() найден', 'success');
+                } else {
+                    log('❌ Метод getAllParts() не найден', 'error');
+                }
+                
+                if (typeof cabinet.getTotalVolume === 'function') {
+                    log('✅ Метод getTotalVolume() найден', 'success');
+                } else {
+                    log('❌ Метод getTotalVolume() не найден', 'error');
+                }
+                
+                if (typeof cabinet.getTotalCost === 'function') {
+                    log('✅ Метод getTotalCost() найден', 'success');
+                } else {
+                    log('❌ Метод getTotalCost() не найден', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка: ${error.message}`, 'error');
+            }
+        }
+
+        function testPanelsGeneration() {
+            log('=== Тест генерации панелей ===', 'info');
+            
+            try {
+                const cabinet = new Cabinet(800, 1800, 500, 100);
+                const panels = cabinet.getAllParts();
+                
+                log(`✅ Получено ${panels.length} панелей`, 'success');
+                
+                // Показываем первые 3 панели
+                panels.slice(0, 3).forEach((panel, index) => {
+                    log(`${index + 1}. ${panel.name}: ${Math.round(panel.w)}×${Math.round(panel.h)}×${Math.round(panel.d)}мм (${panel.material})`, 'info');
+                });
+                
+                if (panels.length >= 8) {
+                    log('✅ Все базовые панели присутствуют', 'success');
+                } else {
+                    log(`⚠️ Ожидалось минимум 8 панелей, получено ${panels.length}`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка генерации панелей: ${error.message}`, 'error');
+            }
+        }
+
+        function testCalculations() {
+            log('=== Тест расчетов ===', 'info');
+            
+            try {
+                const cabinet = new Cabinet(800, 1800, 500, 100);
+                
+                const volume = cabinet.getTotalVolume();
+                const cost = cabinet.getTotalCost();
+                
+                log(`✅ Объем: ${volume.toFixed(4)} м³`, 'success');
+                log(`✅ Стоимость: ${cost.toLocaleString('ru-RU')} ₽`, 'success');
+                
+                // Проверяем разумность значений
+                if (volume > 0 && volume < 1) {
+                    log('✅ Объем в разумных пределах', 'success');
+                } else {
+                    log(`⚠️ Подозрительный объем: ${volume} м³`, 'error');
+                }
+                
+                if (cost > 1000 && cost < 1000000) {
+                    log('✅ Стоимость в разумных пределах', 'success');
+                } else {
+                    log(`⚠️ Подозрительная стоимость: ${cost} ₽`, 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Ошибка расчетов: ${error.message}`, 'error');
+            }
+        }
+
+        function openModernUI() {
+            window.open('../index.html', '_blank');
+        }
+
+        // Автозапуск базового теста
+        window.onload = function() {
+            setTimeout(testCabinetClass, 500);
+        };
+    </script>
+</body>
+</html>

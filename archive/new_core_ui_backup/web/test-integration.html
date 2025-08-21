@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cabinet Core Integration</title>
+</head>
+<body>
+    <h1>Testing Cabinet Core Integration</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        import { SystemFactory } from '../index.js';
+        
+        const output = document.getElementById('output');
+        
+        try {
+            // Create system
+            const system = SystemFactory.create();
+            output.innerHTML += '<p>✅ System created</p>';
+            
+            // Create cabinet  
+            const cabinet = system.createCabinet({
+                width: 800,
+                height: 2000,
+                depth: 600,
+                baseHeight: 100
+            });
+            output.innerHTML += '<p>✅ Cabinet created</p>';
+            
+            // Check dimensions
+            const dims = cabinet.dimensions;
+            output.innerHTML += `<p>✅ Dimensions: ${dims.width}x${dims.height}x${dims.depth}</p>`;
+            
+            // Generate panels
+            cabinet.generate();
+            output.innerHTML += '<p>✅ Cabinet generated</p>';
+            
+            // Get panels
+            const panels = cabinet.getPanels();
+            output.innerHTML += `<p>✅ Panels count: ${panels.length}</p>`;
+            
+            // Get sections
+            const sections = cabinet.getSections();
+            output.innerHTML += `<p>✅ Sections count: ${sections.length}</p>`;
+            
+            console.log('Cabinet:', cabinet);
+            console.log('Dimensions:', dims);
+            console.log('Panels:', panels);
+            console.log('Sections:', sections);
+            
+        } catch (error) {
+            output.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            console.error(error);
+        }
+    </script>
+</body>
+</html>

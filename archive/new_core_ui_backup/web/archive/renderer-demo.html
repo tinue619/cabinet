@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Renderer2D Demo - Архитектурная Зигота v3.1</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+            background: white;
+            box-shadow: 0 0 50px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(90deg, #4f46e5, #7c3aed);
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .header .version {
+            margin-left: auto;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        .main-content {
+            display: flex;
+            width: 100%;
+            margin-top: 60px;
+        }
+        
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background: #f8fafc;
+            border-right: 1px solid #e2e8f0;
+        }
+        
+        .canvas-container {
+            width: 100%;
+            height: calc(100vh - 60px);
+            position: relative;
+        }
+        
+        #cabinet-canvas {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+        
+        .canvas-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #64748b;
+            backdrop-filter: blur(10px);
+        }
+        
+        .controls-panel {
+            width: 320px;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            border-left: 1px solid #e2e8f0;
+        }
+        
+        .control-group {
+            margin-bottom: 25px;
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        .control-group h3 {
+            color: #1e293b;
+            margin-bottom: 15px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+        
+        .btn-toggle {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .btn-toggle.active {
+            background: #22c55e;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 500;
+            color: #64748b;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
+        .input-group {
+            margin: 10px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #64748b;
+            font-weight: 500;
+            font-size: 0.85rem;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .input-group input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-ok {
+            background: #22c55e;
+        }
+        
+        .status-warning {
+            background: #f59e0b;
+        }
+        
+        .status-error {
+            background: #ef4444;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .controls-panel {
+                width: 100%;
+                height: 200px;
+                order: 2;
+            }
+            
+            .canvas-area {
+                order: 1;
+            }
+            
+            .canvas-container {
+                height: calc(100vh - 260px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Шапка -->
+        <div class="header">
+            <h1>🎨 Renderer2D Demo</h1>
+            <div class="version">Архитектурная Зигота v3.1</div>
+        </div>
+        
+        <!-- Основной контент -->
+        <div class="main-content">
+            <!-- Область canvas -->
+            <div class="canvas-area">
+                <div class="canvas-container">
+                    <canvas id="cabinet-canvas"></canvas>
+                    <div class="canvas-overlay">
+                        <div>🖱️ Колесо мыши - масштаб</div>
+                        <div>🎯 Наведение - подсветка</div>
+                        <div>📏 Масштаб: <span id="scale-display">1.0</span></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Панель управления -->
+            <div class="controls-panel">
+                <!-- Настройки отображения -->
+                <div class="control-group">
+                    <h3>🎛️ Отображение</h3>
+                    <button class="btn btn-toggle active" id="toggle-panels">
+                        📐 Панели
+                    </button>
+                    <button class="btn btn-toggle active" id="toggle-sections">
+                        📦 Секции
+                    </button>
+                    <button class="btn btn-toggle" id="toggle-dimensions">
+                        📏 Размеры
+                    </button>
+                    <button class="btn btn-secondary" id="reset-scale">
+                        🔄 Сбросить масштаб
+                    </button>
+                </div>
+                
+                <!-- Создание шкафа -->
+                <div class="control-group">
+                    <h3>🏗️ Шкаф</h3>
+                    <div class="input-group">
+                        <label>Ширина (мм)</label>
+                        <input type="number" id="cabinet-width" value="800" min="400" max="2000">
+                    </div>
+                    <div class="input-group">
+                        <label>Высота (мм)</label>
+                        <input type="number" id="cabinet-height" value="2000" min="600" max="3000">
+                    </div>
+                    <div class="input-group">
+                        <label>Глубина (мм)</label>
+                        <input type="number" id="cabinet-depth" value="600" min="300" max="800">
+                    </div>
+                    <button class="btn btn-primary" id="create-cabinet">
+                        🆕 Создать шкаф
+                    </button>
+                    <button class="btn btn-secondary" id="random-cabinet">
+                        🎲 Случайный шкаф
+                    </button>
+                </div>
+                
+                <!-- Информация о шкафе -->
+                <div class="control-group">
+                    <h3>📊 Информация</h3>
+                    <div id="cabinet-info">
+                        <div class="info-item">
+                            <span class="info-label">Статус:</span>
+                            <span class="info-value">
+                                <span class="status-indicator status-warning"></span>
+                                Загрузка...
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Отладка -->
+                <div class="control-group">
+                    <h3>🐛 Отладка</h3>
+                    <div id="debug-info">
+                        <div class="info-item">
+                            <span class="info-label">Рендерер:</span>
+                            <span class="info-value">Инициализация...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Импорты (заменить на реальные пути при развертывании)
+        import { quickStart } from '../index.js';
+        import { Renderer2D } from '../systems/Renderer2D.js';
+        
+        console.log('🚀 Starting Renderer2D Demo...');
+        
+        let app = {
+            result: null,
+            renderer: null,
+            currentCabinet: null
+        };
+        
+        // Инициализация приложения
+        async function initApp() {
+            try {
+                // Инициализация системы
+                updateStatus('Инициализация ядра...', 'warning');
+                app.result = quickStart();
+                
+                // Создание рендерера
+                updateStatus('Создание рендерера...', 'warning');
+                const canvas = document.getElementById('cabinet-canvas');
+                app.renderer = new Renderer2D(canvas, app.result.system);
+                app.renderer.init();
+                
+                // Установка шкафа
+                app.currentCabinet = app.result.cabinet;
+                app.renderer.setCabinet(app.currentCabinet);
+                
+                updateStatus('Готов к работе', 'ok');
+                updateCabinetInfo();
+                updateDebugInfo();
+                
+                console.log('✅ Demo initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Demo initialization failed:', error);
+                updateStatus('Ошибка инициализации', 'error');
+            }
+        }
+        
+        // Обновление статуса
+        function updateStatus(text, type = 'ok') {
+            const statusEl = document.querySelector('#cabinet-info .info-value');
+            if (statusEl) {
+                statusEl.innerHTML = `<span class="status-indicator status-${type}"></span>${text}`;
+            }
+        }
+        
+        // Обновление информации о шкафе
+        function updateCabinetInfo() {
+            if (!app.currentCabinet) return;
+            
+            const stats = app.currentCabinet.getStats();
+            const dims = app.currentCabinet.dimensions;
+            
+            document.getElementById('cabinet-info').innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">Статус:</span>
+                    <span class="info-value">
+                        <span class="status-indicator status-ok"></span>Активен
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Размеры:</span>
+                    <span class="info-value">${dims.width}×${dims.height}×${dims.depth}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Панелей:</span>
+                    <span class="info-value">${stats.panelsCount}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Секций:</span>
+                    <span class="info-value">${stats.sectionsCount}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Объем:</span>
+                    <span class="info-value">${(stats.volume / 1000000).toFixed(2)} м³</span>
+                </div>
+            `;
+        }
+        
+        // Обновление отладочной информации
+        function updateDebugInfo() {
+            if (!app.renderer) return;
+            
+            const debugInfo = app.renderer.getDebugInfo();
+            const transform = debugInfo.transform;
+            
+            document.getElementById('debug-info').innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">Рендерер:</span>
+                    <span class="info-value">
+                        <span class="status-indicator status-ok"></span>Активен
+                    </span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Масштаб:</span>
+                    <span class="info-value">${transform.scale.toFixed(2)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Canvas:</span>
+                    <span class="info-value">${debugInfo.canvasSize.width}×${debugInfo.canvasSize.height}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Шкаф:</span>
+                    <span class="info-value">${debugInfo.hasCabinet ? 'Да' : 'Нет'}</span>
+                </div>
+            `;
+            
+            // Обновляем индикатор масштаба
+            document.getElementById('scale-display').textContent = transform.scale.toFixed(2);
+        }
+        
+        // Создание нового шкафа
+        function createCabinet() {
+            const width = parseInt(document.getElementById('cabinet-width').value);
+            const height = parseInt(document.getElementById('cabinet-height').value);
+            const depth = parseInt(document.getElementById('cabinet-depth').value);
+            
+            if (width < 400 || width > 2000 || 
+                height < 600 || height > 3000 || 
+                depth < 300 || depth > 800) {
+                alert('Проверьте размеры шкафа!');
+                return;
+            }
+            
+            try {
+                updateStatus('Создание шкафа...', 'warning');
+                
+                const newCabinet = app.result.system.createCabinet({
+                    width,
+                    height,
+                    depth,
+                    baseHeight: 100
+                });
+                
+                newCabinet.generate();
+                app.currentCabinet = newCabinet;
+                app.renderer.setCabinet(newCabinet);
+                
+                updateStatus('Шкаф создан', 'ok');
+                updateCabinetInfo();
+                updateDebugInfo();
+                
+                console.log('✅ New cabinet created:', newCabinet.getStats());
+                
+            } catch (error) {
+                console.error('❌ Cabinet creation failed:', error);
+                updateStatus('Ошибка создания', 'error');
+            }
+        }
+        
+        // Создание случайного шкафа
+        function createRandomCabinet() {
+            const width = 600 + Math.random() * 800; // 600-1400
+            const height = 1800 + Math.random() * 600; // 1800-2400
+            const depth = 400 + Math.random() * 300; // 400-700
+            
+            document.getElementById('cabinet-width').value = Math.round(width);
+            document.getElementById('cabinet-height').value = Math.round(height);
+            document.getElementById('cabinet-depth').value = Math.round(depth);
+            
+            createCabinet();
+        }
+        
+        // Обработчики событий
+        document.getElementById('toggle-panels').onclick = function() {
+            const isActive = this.classList.contains('active');
+            app.renderer.setRenderOptions({ showPanels: !isActive });
+            this.classList.toggle('active');
+            updateDebugInfo();
+        };
+        
+        document.getElementById('toggle-sections').onclick = function() {
+            const isActive = this.classList.contains('active');
+            app.renderer.setRenderOptions({ showSections: !isActive });
+            this.classList.toggle('active');
+            updateDebugInfo();
+        };
+        
+        document.getElementById('toggle-dimensions').onclick = function() {
+            const isActive = this.classList.contains('active');
+            app.renderer.showDimensions(!isActive);
+            this.classList.toggle('active');
+            updateDebugInfo();
+        };
+        
+        document.getElementById('reset-scale').onclick = () => {
+            app.renderer.resetScale();
+            updateDebugInfo();
+        };
+        
+        document.getElementById('create-cabinet').onclick = createCabinet;
+        document.getElementById('random-cabinet').onclick = createRandomCabinet;
+        
+        // Периодическое обновление отладочной информации
+        setInterval(updateDebugInfo, 1000);
+        
+        // Запуск приложения
+        initApp();
+        
+    </script>
+</body>
+</html>
