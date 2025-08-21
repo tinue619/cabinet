@@ -211,11 +211,76 @@ export class Cabinet extends ArchitecturalBase {
         };
         
         /**
-         * 📋 Получить все панели
+         * 📋 Получить все панели (объекты)
          * @returns {Panel[]}
          */
         this.getPanels = () => {
             return Array.from(_panels.values());
+        };
+        
+        /**
+         * 📋 Получить список панелей с размерами (УПРОЩЕНИЕ - МОЗГ считает сам)
+         * @returns {Array}
+         */
+        this.getPanelsWithSizes = () => {
+            const panels = [];
+            
+            // Проходим по всем обязательным панелям
+            for (const [panelKey, panelSpec] of Object.entries(CABINET_DNA.REQUIRED_PANELS)) {
+                const material = _materials.get(panelSpec.material);
+                if (!material) continue;
+                
+                // Считаем размеры по формулам из ДНК
+                let w, h, d;
+                
+                switch (panelKey) {
+                    case 'LEFT_SIDE':
+                    case 'RIGHT_SIDE':
+                        w = material.thickness;
+                        h = _dimensions.height;
+                        d = _dimensions.depth;
+                        break;
+                    case 'TOP':
+                        w = _dimensions.width;
+                        h = material.thickness;
+                        d = _dimensions.depth;
+                        break;
+                    case 'BOTTOM':
+                        w = _dimensions.width - 2 * _materialThickness;
+                        h = material.thickness;
+                        d = _dimensions.depth;
+                        break;
+                    case 'FRONT_BASE':
+                    case 'BACK_BASE':
+                        w = _dimensions.width - 2 * _materialThickness;
+                        h = _dimensions.baseHeight; // ПРАВИЛЬНО: высота цоколя
+                        d = material.thickness;     // ПРАВИЛЬНО: толщина материала
+                        break;
+                    case 'BACK_WALL':
+                        w = _dimensions.width - 2 * _materialThickness;
+                        h = _dimensions.height - _dimensions.baseHeight - _materialThickness;
+                        d = material.thickness;
+                        break;
+                    case 'FACADE':
+                        w = _dimensions.width;
+                        h = _dimensions.height - _dimensions.baseHeight;
+                        d = material.thickness;
+                        break;
+                    default:
+                        w = 100; h = 100; d = material.thickness;
+                }
+                
+                panels.push({
+                    name: panelSpec.name,
+                    w: Math.round(w),
+                    h: Math.round(h),
+                    d: Math.round(d),
+                    material: material.name,
+                    type: panelSpec.type
+                });
+            }
+            
+            return panels;
         };
         
         /**

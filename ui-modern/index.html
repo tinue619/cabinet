@@ -165,71 +165,13 @@
                 };
             }
             
-            // APPLICATION LAYER: Адаптер для извлечения данных о панелях
+            // APPLICATION LAYER: УПРОЩЕННЫЙ адаптер - просто берем данные из МОЗГА
             extractPanelsData() {
                 if (!this.cabinet) return [];
                 
-                // Получаем размеры из инкапсулированного шкафа
-                const dimensions = this.cabinet.dimensions;
-                const dna = this.coreModule.CABINET_DNA;
-                
-                const panels = [];
-                
-                // Обязательные панели согласно DNA
-                Object.entries(dna.REQUIRED_PANELS).forEach(([key, panelDef]) => {
-                    const material = dna.MATERIALS[panelDef.material];
-                    
-                    // Вычисляем размеры панели по формулам из DNA
-                    let w, h, d;
-                    
-                    switch(key) {
-                        case 'LEFT_SIDE':
-                        case 'RIGHT_SIDE':
-                            w = material.thickness;
-                            h = dimensions.height;
-                            d = dimensions.depth;
-                            break;
-                        case 'TOP':
-                            w = dimensions.width;
-                            h = material.thickness;
-                            d = dimensions.depth;
-                            break;
-                        case 'BOTTOM':
-                            w = dimensions.width - 2 * dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
-                            h = material.thickness;
-                            d = dimensions.depth;
-                            break;
-                        case 'FRONT_BASE':
-                        case 'BACK_BASE':
-                            w = dimensions.width - 2 * dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
-                            h = dimensions.baseHeight;  // ИСПРАВЛЕНО: высота цоколя, а не толщина материала
-                            d = material.thickness;     // ИСПРАВЛЕНО: толщина материала, а не глубина шкафа
-                            break;
-                        case 'BACK_WALL':
-                            w = dimensions.width - 2 * dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
-                            h = dimensions.height - dimensions.baseHeight - dna.CONSTANTS.DEFAULT_PANEL_THICKNESS;
-                            d = material.thickness;
-                            break;
-                        case 'FACADE':
-                            w = dimensions.width;
-                            h = dimensions.height - dimensions.baseHeight;
-                            d = material.thickness;
-                            break;
-                        default:
-                            w = 100; h = 100; d = material.thickness;
-                    }
-                    
-                    panels.push({
-                        name: panelDef.name,
-                        w: Math.round(w),
-                        h: Math.round(h), 
-                        d: Math.round(d),
-                        material: material.name,
-                        type: panelDef.type
-                    });
-                });
-                
-                return panels;
+                // ВОТ ОНО - ПРОСТОЕ РЕШЕНИЕ!
+                // МОЗГ считает, ПЕРЕВОДЧИК просто передает
+                return this.cabinet.getPanelsWithSizes();
             }
             
             // APPLICATION LAYER: Подсчет статистики
